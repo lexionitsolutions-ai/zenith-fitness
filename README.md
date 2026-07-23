@@ -18,7 +18,7 @@ On Windows PowerShell systems that block script shims, use `npm.cmd` in place of
 
 ## Admin and member access
 
-The seed creates an admin using `ADMIN_MOBILE` and `ADMIN_PIN`. Run the import from `/admin/import`. Imported members do not automatically receive accounts. After importing, set `TEST_MEMBER_ADMISSION_ID` and `TEST_MEMBER_PIN` in `.env`, load that environment, and run `npx tsx prisma/create-test-member.ts`. You may alternatively pass an Admission ID as the command argument. The development-only command stores only a bcrypt hash.
+The seed creates an admin using `ADMIN_MOBILE` and `ADMIN_PIN`. Run the import from `/admin/import`. To provision an account for every imported member with a valid, unique mobile number, set `MEMBER_INITIAL_PIN` to a temporary password of at least eight characters and run the import. Members must change this password during first sign-in. Mobile numbers already used by staff or administrators are never replaced.
 
 ## Import sources
 
