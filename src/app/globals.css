@@ -1,0 +1,2 @@
+@tailwind base;@tailwind components;@tailwind utilities;
+:root{color-scheme:dark}*{box-sizing:border-box}body{position:relative;margin:0;background:#07110e;color:#f8f4e8;font-family:Arial,sans-serif}body::before{content:"";position:fixed;z-index:-1;right:-5rem;top:12vh;width:min(70vw,34rem);aspect-ratio:457/415;background:url("/brand/zenith-fitness-logo.png") center/contain no-repeat;opacity:.025;pointer-events:none}.safe-bottom{padding-bottom:calc(6.5rem + env(safe-area-inset-bottom))}.member-dashboard nav{display:none}::selection{background:#e5c553;color:#07110e}

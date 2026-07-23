@@ -1,0 +1,2 @@
+export const indiaBusinessDate=(now=new Date())=>{const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const get=(t:string)=>parts.find(p=>p.type===t)?.value;return new Date(`${get('year')}-${get('month')}-${get('day')}T00:00:00.000Z`)};
+export function hasActiveMembership(memberships:{startDate:Date|null;endDate:Date|null}[],now=new Date()){const today=indiaBusinessDate(now);return memberships.some(m=>Boolean(m.startDate&&m.endDate&&m.startDate<=today&&m.endDate>=today))}

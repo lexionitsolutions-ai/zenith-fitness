@@ -1,0 +1,3 @@
+# Google Sheets mapping
+
+Admission sheets `1 Month`, `3 Months`, `6 Months`, and `1 Year` use the original 22-column mapping. Renewal sheets `Renewals 1M`, `Renewals 3M`, `Renewals 6M`, and `Renewals 1Y` use the 16-column renewal mapping and are transformed by Apps Script into the same `RawMembershipRow` contract. Each renewal row remains a separate membership cycle and is idempotent by source sheet and row. Admission ID is trimmed/uppercased; Indian numbers become E.164; dates become UTC dates; currency is normalized; and plan aliases or the source sheet resolve the plan. Original mobile and source payment text are retained.

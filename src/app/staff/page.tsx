@@ -1,0 +1,1 @@
+import {getSession} from "@/lib/auth/session";import {redirect} from "next/navigation";import {StaffConsole} from "@/components/staff/staff-console";export default async function Page(){const s=await getSession();if(!s||!['STAFF','ADMIN'].includes(s.role))redirect('/login');return <StaffConsole/>}

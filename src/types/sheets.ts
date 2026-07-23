@@ -1,0 +1,3 @@
+export const sheetNames=["1 Month","3 Months","6 Months","1 Year","Renewals 1M","Renewals 3M","Renewals 6M","Renewals 1Y"] as const;
+export type RawMembershipRow={sourceSheet:(typeof sheetNames)[number];sourceRow:number;admissionId:unknown;name:unknown;mobile:unknown;gender:unknown;age:unknown;plan:unknown;category:unknown;startDate:unknown;endDate:unknown;totalAmount:unknown;discount:unknown;finalAmount:unknown;paymentMode:unknown;paymentStatus:unknown;remarks:unknown;timestamp:unknown;whatsappMessage:unknown;birthDate:unknown;address:unknown;medicalHistory:unknown;amountPaid:unknown;pendingAmount:unknown};
+export interface MembershipSheetAdapter { fetchMembershipRows():Promise<RawMembershipRow[]> }

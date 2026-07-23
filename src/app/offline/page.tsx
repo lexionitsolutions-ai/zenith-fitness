@@ -1,0 +1,1 @@
+export default function Offline(){return <main className="flex min-h-dvh items-center justify-center p-6 text-center"><div><h1 className="text-3xl font-bold">You’re offline</h1><p className="mt-3 text-white/60">Reconnect to securely view your membership.</p></div></main>}
