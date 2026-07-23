@@ -51,10 +51,15 @@ export async function runImport(adapter: MembershipSheetAdapter, initiatedBy: st
           sourceRow: row.sourceRow,
         });
 
-        if (initialPinHash && member.mobileNumber && !await transaction.user.findUnique({ where: { memberId: member.id } })) {
-          const userWithMobile = await transaction.user.findUnique({ where: { mobileNumber: member.mobileNumber } });
-          if (userWithMobile) warnings.push("Member login was not provisioned because this mobile number is already in use.");
-          else await transaction.user.create({ data: { memberId: member.id, mobileNumber: member.mobileNumber, pinHash: initialPinHash, role: "MEMBER", mustChangePassword: true } });
+        if (initialPinHash && member.mobileNumber) {
+          const memberUser = await transaction.user.findUnique({ where: { memberId: member.id } });
+          if (memberUser?.role === "MEMBER" && memberUser.mustChangePassword) {
+            await transaction.user.update({ where: { id: memberUser.id }, data: { pinHash: initialPinHash, isActive: true, failedLoginCount: 0, lockedUntil: null } });
+          } else if (!memberUser) {
+            const userWithMobile = await transaction.user.findUnique({ where: { mobileNumber: member.mobileNumber } });
+            if (userWithMobile) warnings.push("Member login was not provisioned because this mobile number is already in use.");
+            else await transaction.user.create({ data: { memberId: member.id, mobileNumber: member.mobileNumber, pinHash: initialPinHash, role: "MEMBER", mustChangePassword: true } });
+          }
         }
 
         const found = await transaction.membership.findUnique({ where: { sourceSheet_sourceRow: { sourceSheet: row.sourceSheet, sourceRow: row.sourceRow } } });
