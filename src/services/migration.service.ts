@@ -1,8 +1,9 @@
 import {prisma} from "@/lib/database/prisma";import type {MembershipSheetAdapter,RawMembershipRow} from "@/types/sheets";import {calculateMembershipStatus,calculatePaymentStatus} from "@/lib/utils/status";import {cleanOptional,resolvePlan,normalizeAdmissionId,normalizeIndianMobile,parseCurrency,parseSheetDate} from "@/lib/utils/normalization";import {upsertMember} from "@/repositories/member.repository";
 const blank=(r:RawMembershipRow)=>Object.entries(r).filter(([k])=>!["sourceSheet","sourceRow"].includes(k)).every(([,v])=>v==null||String(v).trim()==="");
+const withImportSource=(row:RawMembershipRow,index:number)=>{const sourceSheet=cleanOptional(row.sourceSheet)??"Google Sheets";const candidate=Number(row.sourceRow);const sourceRow=Number.isInteger(candidate)&&candidate>0?candidate:index+1;return {...row,sourceSheet,sourceRow}};
 export async function runImport(adapter:MembershipSheetAdapter,initiatedBy:string){
  const rows=await adapter.fetchMembershipRows();const batch=await prisma.importBatch.create({data:{initiatedBy,status:"PROCESSING",totalRows:rows.length}});const counts={successfulRows:0,updatedRows:0,skippedRows:0,warningRows:0,failedRows:0};
- for(const row of rows){try{
+ for(const [index,inputRow] of rows.entries()){const row=withImportSource(inputRow,index);try{
   if(blank(row)){counts.skippedRows++;continue}const admissionId=normalizeAdmissionId(row.admissionId);if(!admissionId)throw new Error("Admission ID is required");
   const result=await prisma.$transaction(async tx=>{
    const existing=await tx.member.findUnique({where:{admissionId}});const mobile=normalizeIndianMobile(row.mobile);const warnings:string[]=[];
