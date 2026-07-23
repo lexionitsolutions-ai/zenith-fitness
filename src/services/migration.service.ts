@@ -5,7 +5,7 @@ import { calculateMembershipStatus, calculatePaymentStatus } from "@/lib/utils/s
 import { cleanOptional, resolvePlan, normalizeAdmissionId, normalizeIndianMobile, parseCurrency, parseSheetDate } from "@/lib/utils/normalization";
 import { upsertMember } from "@/repositories/member.repository";
 
-const CONCURRENT_IMPORTS = 5;
+const CONCURRENT_IMPORTS = 1;
 const blank = (row: RawMembershipRow) => Object.entries(row).filter(([key]) => !["sourceSheet", "sourceRow"].includes(key)).every(([, value]) => value == null || String(value).trim() === "");
 const withImportSource = (row: RawMembershipRow, index: number) => {
   const sourceSheet = cleanOptional(row.sourceSheet) ?? "Google Sheets";
@@ -82,7 +82,7 @@ export async function runImport(adapter: MembershipSheetAdapter, initiatedBy: st
         await transaction.membership.upsert({ where: { sourceSheet_sourceRow: { sourceSheet: row.sourceSheet, sourceRow: row.sourceRow } }, create: { ...data, sourceSheet: row.sourceSheet, sourceRow: row.sourceRow }, update: data });
         await transaction.migrationLog.create({ data: { batchId: batch.id, sourceSheet: row.sourceSheet, sourceRow: row.sourceRow, admissionId, status: warnings.length ? "WARNING" : found ? "UPDATED" : "MIGRATED", warningMessage: warnings.join("; ") || null, rawData: row as object } });
         return { updated: !!found, warning: !!warnings.length };
-      });
+      }, { maxWait: 15_000, timeout: 30_000 });
 
       result.updated ? counts.updatedRows++ : counts.successfulRows++;
       if (result.warning) counts.warningRows++;
