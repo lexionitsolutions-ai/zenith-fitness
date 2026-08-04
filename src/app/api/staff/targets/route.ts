@@ -9,6 +9,7 @@ const create = z.object({
   description: z.string().max(500).optional(),
   targetValue: z.number().positive().optional(),
   unit: z.string().max(30).optional(),
+  rewardPoints: z.number().int().min(1).max(10000),
   startDate: z.coerce.date(),
   dueDate: z.coerce.date(),
 });

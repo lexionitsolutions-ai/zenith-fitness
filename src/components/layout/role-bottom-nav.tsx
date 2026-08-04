@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Upload,
   Users,
+  Dumbbell,
 } from "lucide-react";
 
 export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
@@ -22,6 +23,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           { href: "/admin/announcements", label: "Posts", icon: MessageSquare },
           { href: "/admin/points", label: "Ledger", icon: ScrollText },
           { href: "/admin/staff", label: "Staff", icon: Users },
+          { href: "/admin/workouts", label: "Workouts", icon: Dumbbell },
           { href: "/staff/points", label: "Adjust", icon: SlidersHorizontal },
         ]
       : [

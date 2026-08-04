@@ -28,6 +28,49 @@ enum TargetStatus {
   EXPIRED
 }
 
+enum FitnessGoal {
+  WEIGHT_LOSS
+  WEIGHT_GAIN
+  GENERAL_FITNESS
+  BUILD_ENDURANCE
+}
+
+enum WorkoutLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ExerciseType {
+  WARM_UP
+  STRENGTH
+  CARDIO
+  CORE
+  FINISHER
+  BODYWEIGHT
+  STEPPER
+  DUMBBELL
+  BARBELL
+  CABLE
+  TRX
+  MACHINE
+  FREE_WEIGHT
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  REPLACED
+}
+
+enum ExerciseVideoStatus {
+  VERIFIED
+  NEEDS_OWNER_CONFIRMATION
+  NO_SUITABLE_VIDEO
+  NOT_EMBEDDABLE
+}
+
 enum MembershipStatus {
   UPCOMING
   ACTIVE
@@ -110,6 +153,8 @@ model User {
   assignedTargets          MemberTarget[]     @relation("TargetAssignedBy")
   completedTargets         MemberTarget[]     @relation("TargetCompletedBy")
   announcements            Announcement[]
+  workoutAssignments       MemberWorkoutAssignment[] @relation("MemberWorkoutAssignments")
+  assignedWorkouts         MemberWorkoutAssignment[] @relation("WorkoutAssignedBy")
 }
 
 model MembershipPlan {
@@ -242,4 +287,167 @@ model Announcement {
   updatedAt   DateTime  @updatedAt
 
   @@index([isActive, startsAt, endsAt])
+}
+
+model Exercise {
+  id                 String                @id @default(uuid()) @db.Uuid
+  externalId         Int?                  @unique
+  slug               String                @unique
+  name               String
+  category           String?
+  location           String?
+  description        String?
+  instructions       String?               @db.Text
+  safetyInstructions String?               @db.Text
+  videoUrl           String?
+  thumbnailUrl       String?
+  primaryMuscles     Json?
+  equipment          String?
+  difficulty         String?
+  movementType       String?
+  videoStatus        ExerciseVideoStatus   @default(NEEDS_OWNER_CONFIRMATION)
+  youtubeVideoId     String?
+  videoTitle         String?
+  videoChannel       String?
+  videoDuration      String?
+  duplicateVideoOfId String?               @db.Uuid
+  notes              String?               @db.Text
+  exerciseType       ExerciseType
+  equipmentType      String?
+  stationId          String?               @db.Uuid
+  active             Boolean               @default(true)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  station            GymStation?           @relation(fields: [stationId], references: [id])
+  duplicateVideoOf   Exercise?             @relation("ExerciseVideoDuplicates", fields: [duplicateVideoOfId], references: [id], onDelete: SetNull)
+  duplicateVideoChildren Exercise[]         @relation("ExerciseVideoDuplicates")
+  candidates         ExerciseVideoCandidate[]
+  workoutExercises   WorkoutPlanExercise[]
+
+  @@index([slug])
+  @@index([stationId])
+  @@index([videoStatus])
+  @@index([category])
+  @@index([youtubeVideoId])
+}
+
+model ExerciseVideoCandidate {
+  id          String   @id @default(uuid()) @db.Uuid
+  exerciseId  String   @db.Uuid
+  youtubeId   String
+  title       String?
+  channel     String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, youtubeId])
+  @@index([exerciseId])
+}
+
+model GymStation {
+  id          String     @id @default(uuid()) @db.Uuid
+  stationCode String     @unique
+  displayName String
+  machineName String?
+  location    String?
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  exercises   Exercise[]
+
+  @@index([stationCode])
+}
+
+model WorkoutPlan {
+  id          String                    @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String                    @unique
+  level       WorkoutLevel
+  description String?
+  totalDays   Int
+  active      Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  days        WorkoutPlanDay[]
+  assignments MemberWorkoutAssignment[]
+
+  @@index([level, active])
+}
+
+model WorkoutPlanDay {
+  id               String                @id @default(uuid()) @db.Uuid
+  workoutPlanId    String                @db.Uuid
+  dayNumber        Int
+  title            String
+  description      String?
+  estimatedMinutes Int?
+  sortOrder        Int
+  workoutPlan      WorkoutPlan           @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  exercises        WorkoutPlanExercise[]
+
+  @@unique([workoutPlanId, dayNumber])
+  @@index([workoutPlanId, sortOrder])
+}
+
+model WorkoutPlanExercise {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  workoutPlanDayId    String                   @db.Uuid
+  exerciseId          String                   @db.Uuid
+  sortOrder           Int
+  sectionName         String
+  sets                Int?
+  reps                Int?
+  minimumReps         Int?
+  maximumReps         Int?
+  holdSeconds         Int?
+  restSeconds         Int?
+  notes               String?
+  alternativeGroup    String?
+  workoutPlanDay      WorkoutPlanDay           @relation(fields: [workoutPlanDayId], references: [id], onDelete: Cascade)
+  exercise            Exercise                 @relation(fields: [exerciseId], references: [id])
+  progress            MemberExerciseProgress[]
+
+  @@unique([workoutPlanDayId, sortOrder])
+  @@index([workoutPlanDayId, sortOrder])
+  @@index([exerciseId])
+}
+
+model MemberWorkoutAssignment {
+  id            String                   @id @default(uuid()) @db.Uuid
+  memberId      String                   @db.Uuid
+  workoutPlanId String                   @db.Uuid
+  fitnessGoal   FitnessGoal
+  status        AssignmentStatus         @default(ACTIVE)
+  assignedAt    DateTime                 @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  assignedById  String?                  @db.Uuid
+  currentDay    Int                      @default(1)
+  member        User                     @relation("MemberWorkoutAssignments", fields: [memberId], references: [id])
+  workoutPlan   WorkoutPlan              @relation(fields: [workoutPlanId], references: [id])
+  assignedBy    User?                    @relation("WorkoutAssignedBy", fields: [assignedById], references: [id])
+  progress      MemberExerciseProgress[]
+
+  @@index([memberId, status])
+  @@index([workoutPlanId])
+}
+
+model MemberExerciseProgress {
+  id                        String                @id @default(uuid()) @db.Uuid
+  memberWorkoutAssignmentId String                @db.Uuid
+  workoutPlanExerciseId     String                @db.Uuid
+  completed                 Boolean               @default(false)
+  completedAt               DateTime?
+  actualSets                Int?
+  actualReps                Int?
+  notes                     String?
+  selected                  Boolean               @default(true)
+  updatedAt                 DateTime              @updatedAt
+  assignment                MemberWorkoutAssignment @relation(fields: [memberWorkoutAssignmentId], references: [id], onDelete: Cascade)
+  workoutPlanExercise       WorkoutPlanExercise   @relation(fields: [workoutPlanExerciseId], references: [id])
+
+  @@unique([memberWorkoutAssignmentId, workoutPlanExerciseId])
+  @@index([memberWorkoutAssignmentId, completed])
+  @@index([workoutPlanExerciseId])
 }
