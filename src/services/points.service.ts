@@ -34,16 +34,13 @@ export async function awardDailyVisit(qrToken: string, staffUserId: string) {
 }
 
 export async function getMemberPoints(memberId: string) {
-  const [member, transactions, targets, sums, leaders] = await Promise.all([
-    prisma.member.findUnique({ where: { id: memberId }, select: { qrToken: true, admissionId: true, fullName: true } }),
-    prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 }),
-    prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } }),
-    prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } }),
-    prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: { _sum: { points: "desc" } }, take: 20 }),
-  ]);
-
+  const member = await prisma.member.findUnique({ where: { id: memberId }, select: { qrToken: true, admissionId: true, fullName: true } });
   if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
 
+  const transactions = await prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 });
+  const targets = await prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } });
+  const sums = await prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } });
+  const leaders = await prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: { _sum: { points: "desc" } }, take: 20 });
   const leaderMembers = await prisma.member.findMany({
     where: { id: { in: leaders.map((leader) => leader.memberId) } },
     select: { id: true, fullName: true, admissionId: true },
