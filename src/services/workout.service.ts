@@ -4,6 +4,7 @@ import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
 import { GOAL_PLAN_SLUG, goalCards } from "@/lib/workouts/catalog";
 import { parseYouTubeId, youtubeEmbedUrl, youtubeThumbnailUrl } from "@/lib/youtube";
+import dataset from "@/data/workouts/exercises.normalized.json";
 
 const idSchema = z.string().uuid();
 export const goalSchema = z.object({ fitnessGoal: z.nativeEnum(FitnessGoal), workoutPlanSlug: z.string().min(1).max(80).optional() });
@@ -157,6 +158,27 @@ type AssignmentWithPlan = Prisma.MemberWorkoutAssignmentGetPayload<{
   };
 }>;
 
+const verifiedExerciseVideos = new Map(
+  dataset.exercises
+    .filter((exercise) => exercise.status === "VERIFIED" && exercise.video?.youtubeId)
+    .map((exercise) => [exercise.id, exercise.video])
+);
+
+function exerciseWithSeededVideo(exercise: AssignmentWithPlan["workoutPlan"]["days"][number]["exercises"][number]["exercise"]) {
+  const seededVideo = exercise.externalId ? verifiedExerciseVideos.get(exercise.externalId) : null;
+  if (!seededVideo?.youtubeId) return exercise;
+  return {
+    ...exercise,
+    videoStatus: "VERIFIED" as const,
+    youtubeVideoId: seededVideo.youtubeId,
+    videoUrl: youtubeEmbedUrl(seededVideo.youtubeId),
+    thumbnailUrl: youtubeThumbnailUrl(seededVideo.youtubeId),
+    videoTitle: seededVideo.title,
+    videoChannel: seededVideo.channel,
+    videoDuration: seededVideo.duration,
+  };
+}
+
 function buildWorkoutView(assignment: AssignmentWithPlan) {
   const completed = new Set(assignment.progress.filter((item) => item.completed).map((item) => item.workoutPlanExerciseId));
   const selected = new Map(assignment.progress.map((item) => [item.workoutPlanExerciseId, item.selected]));
@@ -185,7 +207,7 @@ function buildWorkoutView(assignment: AssignmentWithPlan) {
         restSeconds: item.restSeconds,
         alternativeGroup: item.alternativeGroup,
         completed: completed.has(item.id),
-        exercise: { ...item.exercise, stationDisplay: stationDisplay(item.exercise) },
+        exercise: { ...exerciseWithSeededVideo(item.exercise), stationDisplay: stationDisplay(item.exercise) },
       })),
     };
   });
