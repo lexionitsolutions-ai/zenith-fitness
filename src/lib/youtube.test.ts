@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseYouTubeId, youtubeEmbedUrl, youtubeThumbnailUrl } from "./youtube";
+import { parseYouTubeId, youtubeEmbedUrl, youtubeThumbnailUrl, youtubeWatchUrl } from "./youtube";
 
 describe("youtube utilities", () => {
   it("parses approved YouTube URL shapes", () => {
@@ -19,6 +19,7 @@ describe("youtube utilities", () => {
   it("generates privacy-enhanced embed and thumbnail URLs", () => {
     expect(youtubeEmbedUrl("Qu7-ceCvq7w")).toBe("https://www.youtube-nocookie.com/embed/Qu7-ceCvq7w?rel=0&modestbranding=1");
     expect(youtubeThumbnailUrl("Qu7-ceCvq7w")).toBe("https://i.ytimg.com/vi/Qu7-ceCvq7w/hqdefault.jpg");
+    expect(youtubeWatchUrl("Qu7-ceCvq7w")).toBe("https://www.youtube.com/watch?v=Qu7-ceCvq7w");
     expect(() => youtubeEmbedUrl("bad")).toThrow("Invalid YouTube video ID");
   });
 });

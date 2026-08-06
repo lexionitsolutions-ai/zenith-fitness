@@ -30,3 +30,8 @@ export function youtubeThumbnailUrl(id: string): string {
   if (!YOUTUBE_ID.test(id)) throw new Error("Invalid YouTube video ID");
   return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 }
+
+export function youtubeWatchUrl(id: string): string {
+  if (!YOUTUBE_ID.test(id)) throw new Error("Invalid YouTube video ID");
+  return `https://www.youtube.com/watch?v=${id}`;
+}
