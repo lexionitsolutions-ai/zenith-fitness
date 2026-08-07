@@ -1,5 +1,6 @@
 import { LoginForm } from "@/components/auth/login-form";
 import { ZenithLogo } from "@/components/brand/zenith-logo";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -16,6 +17,14 @@ export default function LoginPage() {
           </p>
         </div>
         <LoginForm />
+        <footer className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-white/45">
+          <Link href="/privacy" className="min-h-8 py-2 underline-offset-4 hover:text-white hover:underline">
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="min-h-8 py-2 underline-offset-4 hover:text-white hover:underline">
+            Terms & Support
+          </Link>
+        </footer>
       </section>
     </main>
   );

@@ -12,7 +12,7 @@ export default async function Page() {
   if (!session?.memberId) redirect("/login");
   const workout = await getActiveWorkout(session.userId);
   return <>
-    <div className="mx-auto flex max-w-5xl items-center border-b border-white/10 px-4 py-3 sm:px-8"><ZenithLogo compact /></div>
+    <div className="app-topbar border-b border-white/10"><div className="safe-x mx-auto flex max-w-5xl items-center px-4 py-3 sm:px-8"><ZenithLogo compact /></div></div>
     {workout ? <WorkoutDashboard workout={workout} cards={availableGoalCards()} /> : <GoalSelection goals={availableGoalCards()} />}
     <MemberBottomNav active="workout" />
   </>;
