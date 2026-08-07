@@ -12,8 +12,16 @@ type Member = {
   targets: { id: string; title: string; dueDate: string; rewardPoints: number }[];
 };
 
+type ScannedMember = {
+  admissionId: string;
+  name: string;
+};
+
 export function StaffConsole() {
   const [token, setToken] = useState("");
+  const [scanToken, setScanToken] = useState("");
+  const [scannedMember, setScannedMember] = useState<ScannedMember | null>(null);
+  const [scannerKey, setScannerKey] = useState(0);
   const [query, setQuery] = useState("");
   const [member, setMember] = useState<Member | null>(null);
   const [message, setMessage] = useState("");
@@ -21,10 +29,27 @@ export function StaffConsole() {
   const scan = useCallback(async (value?: string) => {
     const qr = (value ?? token).trim();
     if (!qr) return;
+    setToken(qr);
+    setScanToken(qr);
+    const response = await fetch(`/api/staff/scan?qrToken=${encodeURIComponent(qr)}`);
+    const payload = await response.json();
+    setScannedMember(response.ok ? payload.data : null);
+    setMessage(response.ok ? "" : payload.error?.message);
+  }, [token]);
+
+  async function awardVisit() {
+    const qr = (scanToken || token).trim();
+    if (!qr) return;
     const response = await fetch("/api/staff/scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ qrToken: qr }) });
     const payload = await response.json();
     setMessage(response.ok ? (payload.data.alreadyAwarded ? "Daily points already awarded" : `5 points awarded to ${payload.data.member.name}`) : payload.error?.message);
-  }, [token]);
+    if (response.ok) {
+      setToken("");
+      setScanToken("");
+      setScannedMember(null);
+      setScannerKey((value) => value + 1);
+    }
+  }
 
   async function search() {
     const response = await fetch(`/api/staff/member?q=${encodeURIComponent(query)}`);
@@ -69,9 +94,15 @@ export function StaffConsole() {
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="flex gap-2 font-bold"><ScanLine />Award daily visit</h2>
         <p className="mt-2 text-sm text-white/50">Scan the member QR. Only 5 visit points can be awarded per Indian calendar day.</p>
-        <QrScanner onScan={scan} />
-        <input value={token} onChange={(event) => setToken(event.target.value)} placeholder="Or enter QR token" className="mt-4 w-full rounded-xl bg-black/20 p-3" />
-        <button onClick={() => scan()} className="mt-3 min-h-12 w-full rounded-xl bg-zenith-500 font-bold">Award 5 points</button>
+        <QrScanner key={scannerKey} onScan={scan} />
+        <input value={token} onChange={(event) => { setToken(event.target.value); setScanToken(""); setScannedMember(null); }} placeholder="Or enter QR token" className="mt-4 w-full rounded-xl bg-black/20 p-3" />
+        <button onClick={() => scan()} className="mt-3 min-h-12 w-full rounded-xl bg-white/10 font-bold">Show member</button>
+        {scannedMember && <div className="mt-3 rounded-2xl bg-black/20 p-4">
+          <p className="text-sm text-white/50">Ready to award</p>
+          <b className="mt-1 block text-lg">{scannedMember.name}</b>
+          <span className="text-sm text-zenith-400">{scannedMember.admissionId}</span>
+        </div>}
+        <button onClick={awardVisit} disabled={!scanToken} className="mt-3 min-h-12 w-full rounded-xl bg-zenith-500 font-bold disabled:cursor-not-allowed disabled:opacity-45">Reward 5 points</button>
       </section>
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="flex gap-2 font-bold"><Search />Find member</h2>
