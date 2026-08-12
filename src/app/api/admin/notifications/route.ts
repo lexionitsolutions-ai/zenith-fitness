@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
 import { requireActiveRole } from "@/lib/auth/authorize";
+import { AppError } from "@/lib/errors";
 import { apiError } from "@/lib/errors";
 import { queueNotificationForUsers, sendPendingNotifications } from "@/services/notification.service";
 
@@ -19,8 +20,16 @@ export async function POST(req: Request) {
     const roles = value.audience === "ALL" ? [Role.MEMBER, Role.STAFF] : value.audience === "STAFF" ? [Role.STAFF] : [Role.MEMBER];
     const users = await prisma.user.findMany({ where: { role: { in: roles }, isActive: true }, select: { id: true } });
     const queued = await queueNotificationForUsers(users.map((user) => user.id), { title: value.title, body: value.body, data: { type: "ADMIN_BROADCAST", audience: value.audience } });
-    const sent = value.sendNow ? await sendPendingNotifications(500) : null;
-    return Response.json({ success: true, data: { users: users.length, queued: queued.queued, sent } });
+    let sent = null;
+    let warning = null;
+    if (value.sendNow && queued.queued > 0) {
+      try {
+        sent = await sendPendingNotifications(500);
+      } catch (error) {
+        warning = error instanceof AppError ? error.message : "Notification queued, but immediate sending failed.";
+      }
+    }
+    return Response.json({ success: true, data: { users: users.length, queued: queued.queued, sent, warning } });
   } catch (error) {
     return apiError(error);
   }

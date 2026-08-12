@@ -16,7 +16,7 @@ export function NotificationAdmin() {
     const result = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(result.error?.message ?? "Unable to send notification.");
-    setMessage(`Queued ${result.data.queued} device notifications for ${result.data.users} users. Sent ${result.data.sent?.sent ?? 0}, failed ${result.data.sent?.failed ?? 0}, skipped ${result.data.sent?.skipped ?? 0}.`);
+    setMessage(`Queued ${result.data.queued} device notifications for ${result.data.users} users. Sent ${result.data.sent?.sent ?? 0}, failed ${result.data.sent?.failed ?? 0}, skipped ${result.data.sent?.skipped ?? 0}.${result.data.warning ? ` ${result.data.warning}` : ""}`);
     event.currentTarget.reset();
   }
 

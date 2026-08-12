@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
 import { requireActiveRole } from "@/lib/auth/authorize";
 import { AppError, apiError } from "@/lib/errors";
+import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 
 const input = z.object({
   id: z.string().uuid().optional(),
@@ -13,6 +14,7 @@ const input = z.object({
 export async function POST(req: Request) {
   try {
     await requireActiveRole(["ADMIN"]);
+    await ensureOperationalTables();
     const value = input.parse(await req.json());
     const row = value.id
       ? await prisma.scheduleSession.update({ where: { id: value.id }, data: { day: value.day, time: value.time, name: value.name, isActive: true } })
@@ -26,6 +28,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     await requireActiveRole(["ADMIN"]);
+    await ensureOperationalTables();
     const id = z.string().uuid().parse(new URL(req.url).searchParams.get("id"));
     const result = await prisma.scheduleSession.updateMany({ where: { id }, data: { isActive: false } });
     if (result.count === 0) throw new AppError("SCHEDULE_NOT_FOUND", "Schedule session not found.", 404);

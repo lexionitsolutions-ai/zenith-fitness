@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/database/prisma";
 import { BATCH_SCHEDULE, type BatchSession } from "@/constants/batch-schedule";
+import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -15,6 +16,7 @@ const indiaParts = (d: Date) => {
 };
 
 export async function getScheduleSessions() {
+  await ensureOperationalTables();
   const rows = await prisma.scheduleSession.findMany({ where: { isActive: true }, orderBy: [{ day: "asc" }, { time: "asc" }] });
   return rows.length ? rows.map(toSession) : BATCH_SCHEDULE;
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireActiveRole } from "@/lib/auth/authorize";
 import { prisma } from "@/lib/database/prisma";
+import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 import { MemberPasswordReset } from "@/components/admin/member-password-reset";
 
 export default async function StaffMembersPage() {
@@ -10,6 +11,7 @@ export default async function StaffMembersPage() {
     redirect("/login");
   }
 
+  await ensureOperationalTables();
   const requests = await prisma.passwordResetRequest.findMany({
     where: { status: "PENDING" },
     include: { user: { select: { member: { select: { fullName: true, admissionId: true, mobileNumber: true } } } } },

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
 import { apiError } from "@/lib/errors";
 import { normalizeIndianMobile } from "@/lib/utils/normalization";
+import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 
 const input = z.object({ mobile: z.string().min(1) });
 
@@ -11,6 +12,7 @@ export async function POST(req: Request) {
     const normalized = normalizeIndianMobile(mobile);
 
     if (normalized) {
+      await ensureOperationalTables();
       const user = await prisma.user.findUnique({
         where: { mobileNumber: normalized },
         select: { id: true, role: true, isActive: true },

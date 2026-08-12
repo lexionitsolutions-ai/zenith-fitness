@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
 import { requireActiveRole } from "@/lib/auth/authorize";
 import { AppError, apiError } from "@/lib/errors";
+import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 
 const input = z.object({
   q: z.string().trim().min(1),
@@ -13,6 +14,7 @@ const input = z.object({
 export async function POST(req: Request) {
   try {
     const session = await requireActiveRole(["ADMIN", "STAFF"]);
+    await ensureOperationalTables();
     const value = input.parse(await req.json());
     if (!/[A-Za-z]/.test(value.password) || !/\d/.test(value.password)) {
       throw new AppError("WEAK_PASSWORD", "Temporary password must include at least one letter and one number.", 400);
