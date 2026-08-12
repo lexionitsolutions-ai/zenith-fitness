@@ -4,6 +4,7 @@ import { prisma } from "@/lib/database/prisma";
 import { requireActiveRole } from "@/lib/auth/authorize";
 import { AppError } from "@/lib/errors";
 import { apiError } from "@/lib/errors";
+import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 import { queueNotificationForUsers, sendPendingNotifications } from "@/services/notification.service";
 
 const input = z.object({
@@ -16,6 +17,7 @@ const input = z.object({
 export async function POST(req: Request) {
   try {
     await requireActiveRole(["ADMIN"]);
+    await ensureOperationalTables();
     const value = input.parse(await req.json());
     const roles = value.audience === "ALL" ? [Role.MEMBER, Role.STAFF] : value.audience === "STAFF" ? [Role.STAFF] : [Role.MEMBER];
     const users = await prisma.user.findMany({ where: { role: { in: roles }, isActive: true }, select: { id: true } });

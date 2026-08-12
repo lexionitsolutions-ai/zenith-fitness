@@ -6,6 +6,60 @@ export async function ensureOperationalTables() {
   if (checked) return;
 
   await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
+  await prisma.$executeRawUnsafe(`DO $$ BEGIN CREATE TYPE "PushPlatform" AS ENUM ('IOS', 'ANDROID', 'WEB'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+  await prisma.$executeRawUnsafe(`DO $$ BEGIN CREATE TYPE "PushProvider" AS ENUM ('FCM', 'APNS', 'EXPO', 'WEB_PUSH'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+  await prisma.$executeRawUnsafe(`DO $$ BEGIN CREATE TYPE "NotificationDeliveryStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'SKIPPED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "PushDevice" (
+      "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+      "userId" UUID NOT NULL,
+      "token" TEXT NOT NULL,
+      "platform" "PushPlatform" NOT NULL,
+      "provider" "PushProvider" NOT NULL DEFAULT 'FCM',
+      "deviceId" TEXT,
+      "appVersion" TEXT,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "lastSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PushDevice_pkey" PRIMARY KEY ("id")
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "NotificationDelivery" (
+      "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+      "userId" UUID NOT NULL,
+      "pushDeviceId" UUID,
+      "title" TEXT NOT NULL,
+      "body" TEXT,
+      "data" JSONB,
+      "status" "NotificationDeliveryStatus" NOT NULL DEFAULT 'PENDING',
+      "provider" "PushProvider",
+      "providerMessageId" TEXT,
+      "errorCode" TEXT,
+      "errorMessage" TEXT,
+      "sentAt" TIMESTAMP(3),
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "NotificationDelivery_pkey" PRIMARY KEY ("id")
+    )
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "PushDevice_token_key" ON "PushDevice"("token")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PushDevice_userId_isActive_idx" ON "PushDevice"("userId", "isActive")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "PushDevice_platform_provider_idx" ON "PushDevice"("platform", "provider")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "NotificationDelivery_userId_createdAt_idx" ON "NotificationDelivery"("userId", "createdAt")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "NotificationDelivery_status_createdAt_idx" ON "NotificationDelivery"("status", "createdAt")`);
+  await prisma.$executeRawUnsafe(`
+    DO $$ BEGIN
+      ALTER TABLE "PushDevice" ADD CONSTRAINT "PushDevice_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
+  await prisma.$executeRawUnsafe(`
+    DO $$ BEGIN
+      ALTER TABLE "NotificationDelivery" ADD CONSTRAINT "NotificationDelivery_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "PasswordResetRequest" (
       "id" UUID NOT NULL DEFAULT gen_random_uuid(),
