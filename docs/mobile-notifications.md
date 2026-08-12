@@ -40,7 +40,19 @@ Content-Type: application/json
 
 - Device tokens are stored in `PushDevice`.
 - Publishing an announcement queues notification rows in `NotificationDelivery`.
-- Delivery sending is intentionally provider-ready. Once Firebase credentials are available, add an FCM sender that processes `PENDING` delivery rows and marks them `SENT` or `FAILED`.
+- `POST /api/notifications/send` sends queued FCM notifications and marks delivery rows `SENT`, `FAILED`, or `SKIPPED`.
+- Protect the sender endpoint with `Authorization: Bearer <NOTIFICATION_SEND_SECRET>`.
+
+## Required Environment Variables
+
+Set these in production before enabling the sender:
+
+```env
+FIREBASE_PROJECT_ID="your-firebase-project-id"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-...@your-project.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+NOTIFICATION_SEND_SECRET="long-random-secret"
+```
 
 ## Required Store Setup Later
 
@@ -49,3 +61,15 @@ Content-Type: application/json
 - iOS `GoogleService-Info.plist`.
 - Apple Developer account with push notification capability.
 - APNs key uploaded into Firebase for iOS delivery.
+
+For Android, place `google-services.json` at `android/app/google-services.json`, then run:
+
+```bash
+npx cap sync android
+```
+
+For iOS, add the Capacitor iOS project on macOS, place `GoogleService-Info.plist` in the iOS app target, enable Push Notifications and Background Modes in Xcode, then run:
+
+```bash
+npx cap sync ios
+```

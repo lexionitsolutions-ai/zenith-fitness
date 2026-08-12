@@ -2,6 +2,8 @@
 
 import { AlertTriangle, CreditCard, Dumbbell } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
+import { ProfileEditor } from "@/components/dashboard/profile-editor";
 
 type Data = Awaited<ReturnType<typeof import("@/services/dashboard.service").getDashboard>>;
 
@@ -17,6 +19,7 @@ export function Dashboard({ data }: { data: Data }) {
   const payment = data.payment;
 
   async function logout() {
+    await unregisterPushNotifications().catch(console.error);
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
     router.refresh();
@@ -125,7 +128,16 @@ export function Dashboard({ data }: { data: Data }) {
             <dt className="text-white/40">Birth date</dt>
             <dd>{data.member.birthDate ?? "Missing"}</dd>
           </div>
+          <div>
+            <dt className="text-white/40">Address</dt>
+            <dd>{data.member.address ?? "Missing"}</dd>
+          </div>
+          <div>
+            <dt className="text-white/40">Medical history</dt>
+            <dd>{data.member.medicalHistory ?? "Missing"}</dd>
+          </div>
         </dl>
+        <ProfileEditor profile={{ gender: data.member.gender, birthDate: data.member.birthDate, address: data.member.address, medicalHistory: data.member.medicalHistory }} />
       </section>
     </main>
   );

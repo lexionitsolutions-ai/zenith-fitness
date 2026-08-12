@@ -1,0 +1,27 @@
+import { redirect } from "next/navigation";
+import { requireActiveRole } from "@/lib/auth/authorize";
+import { prisma } from "@/lib/database/prisma";
+import { MemberPasswordReset } from "@/components/admin/member-password-reset";
+
+export default async function MembersPage() {
+  try {
+    await requireActiveRole(["ADMIN"]);
+  } catch {
+    redirect("/login");
+  }
+
+  const requests = await prisma.passwordResetRequest.findMany({
+    where: { status: "PENDING" },
+    include: { user: { select: { member: { select: { fullName: true, admissionId: true, mobileNumber: true } } } } },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  return (
+    <main className="mx-auto min-h-dvh max-w-2xl px-5 py-8">
+      <p className="text-sm text-zenith-400">ADMIN MEMBERS</p>
+      <h1 className="text-3xl font-black">Member access</h1>
+      <MemberPasswordReset initialRequests={JSON.parse(JSON.stringify(requests))} />
+    </main>
+  );
+}

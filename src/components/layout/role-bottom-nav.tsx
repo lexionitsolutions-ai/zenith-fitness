@@ -8,8 +8,11 @@ import {
   ScanLine,
   ScrollText,
   SlidersHorizontal,
+  CalendarDays,
+  Bell,
   Upload,
   Users,
+  UserRoundCog,
   Dumbbell,
 } from "lucide-react";
 
@@ -22,12 +25,16 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           { href: "/admin/import", label: "Import", icon: Upload },
           { href: "/admin/announcements", label: "Posts", icon: MessageSquare },
           { href: "/admin/points", label: "Ledger", icon: ScrollText },
+          { href: "/admin/members", label: "Members", icon: UserRoundCog },
+          { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
+          { href: "/admin/notifications", label: "Notify", icon: Bell },
           { href: "/admin/staff", label: "Staff", icon: Users },
           { href: "/admin/workouts", label: "Workouts", icon: Dumbbell },
           { href: "/staff/points", label: "Adjust", icon: SlidersHorizontal },
         ]
       : [
           { href: "/staff", label: "Scan", icon: ScanLine },
+          { href: "/staff/members", label: "Members", icon: UserRoundCog },
           { href: "/staff/points", label: "Points", icon: SlidersHorizontal },
         ];
 
