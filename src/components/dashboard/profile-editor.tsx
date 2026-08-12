@@ -1,15 +1,16 @@
 "use client";
 
-import { LoaderCircle, Save } from "lucide-react";
+import { LoaderCircle, Pencil, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type Profile = { gender: string | null; birthDate: string | null; address: string | null; medicalHistory: string | null };
 
-export function ProfileEditor({ profile }: { profile: Profile }) {
+export function ProfileEditor({ profile, complete }: { profile: Profile; complete: boolean }) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(!complete);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,7 +22,19 @@ export function ProfileEditor({ profile }: { profile: Profile }) {
     setBusy(false);
     if (!response.ok) return setMessage(result.error?.message ?? "Unable to update profile.");
     setMessage("Profile updated.");
+    setOpen(false);
     router.refresh();
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-black/20 p-4">
+        <p className="text-sm text-white/55">{message || "Profile information is saved."}</p>
+        <button type="button" onClick={() => setOpen(true)} className="flex min-h-11 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold">
+          <Pencil size={17} />Edit
+        </button>
+      </div>
+    );
   }
 
   return (

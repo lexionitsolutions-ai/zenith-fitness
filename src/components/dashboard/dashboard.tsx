@@ -137,7 +137,7 @@ export function Dashboard({ data }: { data: Data }) {
             <dd>{data.member.medicalHistory ?? "Missing"}</dd>
           </div>
         </dl>
-        <ProfileEditor profile={{ gender: data.member.gender, birthDate: data.member.birthDate, address: data.member.address, medicalHistory: data.member.medicalHistory }} />
+        <ProfileEditor complete={data.member.profileCompletionPercentage === 100} profile={{ gender: data.member.gender, birthDate: data.member.birthDate, address: data.member.address, medicalHistory: data.member.medicalHistory }} />
       </section>
     </main>
   );
