@@ -21,6 +21,7 @@ async function saveToken(token: string) {
 
   if (!response.ok) throw new Error("Could not register push notification token.");
   window.localStorage.setItem(registeredTokenKey, token);
+  console.info("[push] device token registered");
 }
 
 export async function unregisterPushNotifications() {
@@ -43,21 +44,43 @@ export function PushNotificationRegistration() {
 
     async function register() {
       const permissions = await PushNotifications.requestPermissions();
-      if (!active || permissions.receive !== "granted") return;
+      if (!active) return;
+      if (permissions.receive !== "granted") {
+        console.info("[push] notification permission not granted", permissions.receive);
+        return;
+      }
 
-      await PushNotifications.addListener("registration", (token: Token) => {
+      const registrationListener = await PushNotifications.addListener("registration", (token: Token) => {
         void saveToken(token.value).catch(console.error);
       });
 
-      await PushNotifications.addListener("registrationError", console.error);
+      const registrationErrorListener = await PushNotifications.addListener("registrationError", (error) => {
+        console.error("[push] registration failed", error);
+      });
+
+      const receivedListener = await PushNotifications.addListener("pushNotificationReceived", (notification) => {
+        console.info("[push] notification received", notification);
+      });
+
       await PushNotifications.register();
+
+      return () => {
+        void registrationListener.remove();
+        void registrationErrorListener.remove();
+        void receivedListener.remove();
+      };
     }
 
-    void register().catch(console.error);
+    let cleanupListeners: (() => void) | undefined;
+    void register()
+      .then((cleanup) => {
+        cleanupListeners = cleanup;
+      })
+      .catch(console.error);
 
     return () => {
       active = false;
-      void PushNotifications.removeAllListeners();
+      cleanupListeners?.();
     };
   }, []);
 

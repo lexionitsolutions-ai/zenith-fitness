@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { PushNotificationRegistration } from "@/components/notifications/push-notification-registration";
 
 export const metadata: Metadata = {
   title: { default: "Zenith Fitness", template: "%s - Zenith Fitness" },
@@ -31,7 +32,10 @@ export const viewport: Viewport = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PushNotificationRegistration />
+        {children}
+      </body>
     </html>
   );
 }
