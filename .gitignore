@@ -4,6 +4,9 @@ node_modules
 .env.local
 coverage
 *.log
+.idea
+.vscode
+android/.idea
 
 .vercel
 .env*

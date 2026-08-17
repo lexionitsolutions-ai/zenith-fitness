@@ -1,4 +1,4 @@
-import { AssignmentStatus, FitnessGoal, Prisma, Role, WorkoutLevel } from "@prisma/client";
+import { AssignmentStatus, ExerciseType, FitnessGoal, Prisma, Role, WorkoutLevel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
@@ -18,10 +18,36 @@ export const adminAssignSchema = z.object({
 export const exerciseUpdateSchema = z.object({
   exerciseId: idSchema,
   videoUrl: z.string().url().nullable().optional(),
+  videoStartSeconds: z.number().int().min(0).nullable().optional(),
+  videoEndSeconds: z.number().int().min(1).nullable().optional(),
   instructions: z.string().max(2000).nullable().optional(),
   safetyInstructions: z.string().max(2000).nullable().optional(),
   active: z.boolean().optional(),
 });
+export const exerciseCreateSchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  exerciseType: z.nativeEnum(ExerciseType),
+  equipmentType: z.string().trim().max(120).nullable().optional(),
+  stationId: idSchema.nullable().optional(),
+  videoUrl: z.string().url().nullable().optional(),
+  videoStartSeconds: z.number().int().min(0).nullable().optional(),
+  videoEndSeconds: z.number().int().min(1).nullable().optional(),
+  instructions: z.string().max(2000).nullable().optional(),
+  safetyInstructions: z.string().max(2000).nullable().optional(),
+});
+export const workoutCardExerciseCreateSchema = z.object({
+  workoutPlanDayId: idSchema,
+  exerciseId: idSchema,
+  sectionName: z.string().trim().min(1).max(120),
+  sets: z.number().int().min(1).max(20).nullable().optional(),
+  reps: z.number().int().min(1).max(500).nullable().optional(),
+  minimumReps: z.number().int().min(1).max(500).nullable().optional(),
+  maximumReps: z.number().int().min(1).max(500).nullable().optional(),
+  holdSeconds: z.number().int().min(1).max(3600).nullable().optional(),
+  restSeconds: z.number().int().min(0).max(3600).nullable().optional(),
+  alternativeGroup: z.string().trim().max(120).nullable().optional(),
+});
+export const workoutCardExerciseDeleteSchema = z.object({ workoutPlanExerciseId: idSchema });
 
 export function stationDisplay(exercise: { exerciseType: string; equipmentType: string | null; station: { displayName: string } | null }) {
   if (exercise.station?.displayName) return exercise.station.displayName;
@@ -104,12 +130,57 @@ export async function getWorkoutHistory(memberUserId: string) {
 
 export async function getAdminWorkoutConsole() {
   const [plans, exercises, stations, members] = await Promise.all([
-    prisma.workoutPlan.findMany({ orderBy: [{ level: "asc" }, { name: "asc" }], include: { _count: { select: { days: true, assignments: true } } } }),
+    prisma.workoutPlan.findMany({
+      orderBy: [{ level: "asc" }, { name: "asc" }],
+      include: {
+        _count: { select: { days: true, assignments: true } },
+        days: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            exercises: { orderBy: { sortOrder: "asc" }, include: { exercise: { include: { station: true } } } },
+          },
+        },
+      },
+    }),
     prisma.exercise.findMany({ orderBy: { name: "asc" }, include: { station: true } }),
     prisma.gymStation.findMany({ orderBy: { stationCode: "asc" } }),
     prisma.user.findMany({ where: { role: Role.MEMBER, isActive: true }, orderBy: { displayName: "asc" }, take: 100, select: { id: true, displayName: true, mobileNumber: true, member: { select: { fullName: true, admissionId: true } } } }),
   ]);
   return { plans, exercises, stations, members };
+}
+
+export async function adminAddWorkoutCardExercise(input: unknown) {
+  const data = workoutCardExerciseCreateSchema.parse(input);
+  if (data.minimumReps != null && data.maximumReps != null && data.maximumReps < data.minimumReps) {
+    throw new AppError("INVALID_REP_RANGE", "Maximum reps must be greater than or equal to minimum reps.", 400);
+  }
+  return prisma.$transaction(async (tx) => {
+    const last = await tx.workoutPlanExercise.findFirst({
+      where: { workoutPlanDayId: data.workoutPlanDayId },
+      orderBy: { sortOrder: "desc" },
+      select: { sortOrder: true },
+    });
+    return tx.workoutPlanExercise.create({
+      data: {
+        workoutPlanDayId: data.workoutPlanDayId,
+        exerciseId: data.exerciseId,
+        sortOrder: (last?.sortOrder ?? 0) + 1,
+        sectionName: data.sectionName,
+        sets: data.sets,
+        reps: data.reps,
+        minimumReps: data.minimumReps,
+        maximumReps: data.maximumReps,
+        holdSeconds: data.holdSeconds,
+        restSeconds: data.restSeconds,
+        alternativeGroup: data.alternativeGroup || null,
+      },
+    });
+  });
+}
+
+export async function adminDeleteWorkoutCardExercise(input: unknown) {
+  const { workoutPlanExerciseId } = workoutCardExerciseDeleteSchema.parse(input);
+  return prisma.workoutPlanExercise.delete({ where: { id: workoutPlanExerciseId } });
 }
 
 export async function adminAssignWorkout(adminUserId: string, input: unknown) {
@@ -124,27 +195,68 @@ export async function adminAssignWorkout(adminUserId: string, input: unknown) {
 
 export async function adminUpdateExercise(input: unknown) {
   const { exerciseId, ...data } = exerciseUpdateSchema.parse(input);
+  if (data.videoStartSeconds != null && data.videoEndSeconds != null && data.videoEndSeconds <= data.videoStartSeconds) {
+    throw new AppError("INVALID_VIDEO_SEGMENT", "Video end time must be after the start time.", 400);
+  }
   const update: Prisma.ExerciseUpdateInput = {
     instructions: data.instructions,
     safetyInstructions: data.safetyInstructions,
     active: data.active,
+    videoStartSeconds: data.videoStartSeconds,
+    videoEndSeconds: data.videoEndSeconds,
   };
   if (data.videoUrl !== undefined) {
     if (data.videoUrl === null || data.videoUrl === "") {
       update.youtubeVideoId = null;
       update.videoUrl = null;
       update.thumbnailUrl = null;
+      update.videoStartSeconds = null;
+      update.videoEndSeconds = null;
       update.videoStatus = "NEEDS_OWNER_CONFIRMATION";
     } else {
       const youtubeId = parseYouTubeId(data.videoUrl);
       if (!youtubeId) throw new AppError("INVALID_VIDEO_URL", "Enter a valid YouTube video URL or video ID.", 400);
       update.youtubeVideoId = youtubeId;
-      update.videoUrl = youtubeEmbedUrl(youtubeId);
+      update.videoUrl = youtubeEmbedUrl(youtubeId, { startSeconds: data.videoStartSeconds, endSeconds: data.videoEndSeconds });
       update.thumbnailUrl = youtubeThumbnailUrl(youtubeId);
       update.videoStatus = "VERIFIED";
     }
   }
   return prisma.exercise.update({ where: { id: exerciseId }, data: update });
+}
+
+export async function adminCreateExercise(input: unknown) {
+  const data = exerciseCreateSchema.parse(input);
+  if (data.videoStartSeconds != null && data.videoEndSeconds != null && data.videoEndSeconds <= data.videoStartSeconds) {
+    throw new AppError("INVALID_VIDEO_SEGMENT", "Video end time must be after the start time.", 400);
+  }
+  let youtubeVideoId: string | null = null;
+  if (data.videoUrl) {
+    youtubeVideoId = parseYouTubeId(data.videoUrl);
+    if (!youtubeVideoId) throw new AppError("INVALID_VIDEO_URL", "Enter a valid YouTube video URL or video ID.", 400);
+  }
+  const baseSlug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "exercise";
+  let slug = baseSlug;
+  for (let index = 2; await prisma.exercise.findUnique({ where: { slug }, select: { id: true } }); index += 1) {
+    slug = `${baseSlug}-${index}`;
+  }
+  return prisma.exercise.create({
+    data: {
+      slug,
+      name: data.name,
+      exerciseType: data.exerciseType,
+      equipmentType: data.equipmentType || null,
+      stationId: data.stationId || null,
+      instructions: data.instructions || null,
+      safetyInstructions: data.safetyInstructions || null,
+      youtubeVideoId,
+      videoStartSeconds: data.videoStartSeconds,
+      videoEndSeconds: data.videoEndSeconds,
+      videoUrl: youtubeVideoId ? youtubeEmbedUrl(youtubeVideoId, { startSeconds: data.videoStartSeconds, endSeconds: data.videoEndSeconds }) : null,
+      thumbnailUrl: youtubeVideoId ? youtubeThumbnailUrl(youtubeVideoId) : null,
+      videoStatus: youtubeVideoId ? "VERIFIED" : "NEEDS_OWNER_CONFIRMATION",
+    },
+  });
 }
 
 export function availableGoalCards() {
@@ -165,6 +277,7 @@ const verifiedExerciseVideos = new Map(
 );
 
 function exerciseWithSeededVideo(exercise: AssignmentWithPlan["workoutPlan"]["days"][number]["exercises"][number]["exercise"]) {
+  if (exercise.videoStatus === "VERIFIED" && exercise.youtubeVideoId) return exercise;
   const seededVideo = exercise.externalId ? verifiedExerciseVideos.get(exercise.externalId) : null;
   if (!seededVideo?.youtubeId) return exercise;
   return {

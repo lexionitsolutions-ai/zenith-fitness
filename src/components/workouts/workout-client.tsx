@@ -241,20 +241,20 @@ export function ExerciseView({ workout, exerciseId }: { workout: Workout; exerci
   if (!item) return null;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-32 pt-6 sm:px-8">
-      <Link href={`/workout/day/${item.dayNumber}`} className="inline-flex items-center gap-2 text-sm text-white/60">
+    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-2 pb-[5.25rem] pt-3 sm:px-5">
+      <Link href={`/workout/day/${item.dayNumber}`} className="inline-flex items-center gap-2 px-1 text-sm text-white/60">
         <ArrowLeft size={16} />
         Day {item.dayNumber}
       </Link>
-      <section className="mt-5 overflow-hidden rounded-3xl border border-white/10 bg-white/[.04]">
-        <ExerciseVideo exerciseName={item.exercise.name} youtubeVideoId={item.exercise.youtubeVideoId} status={item.exercise.videoStatus} />
-        <div className="p-5">
+      <section className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[.04]">
+        <ExerciseVideo exerciseName={item.exercise.name} youtubeVideoId={item.exercise.youtubeVideoId} videoStartSeconds={item.exercise.videoStartSeconds} videoEndSeconds={item.exercise.videoEndSeconds} status={item.exercise.videoStatus} />
+        <div className="min-h-0 flex-1 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs font-bold uppercase tracking-widest text-zenith-400">{item.sectionName}</p>
             <span className="rounded-full bg-zenith-500 px-3 py-1 text-xs font-black text-slate-950">{item.exercise.stationDisplay}</span>
           </div>
-          <h1 className="mt-2 text-3xl font-black">{item.exercise.name}</h1>
-          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+          <h1 className="mt-2 text-[clamp(1.55rem,8vw,2rem)] font-black leading-tight">{item.exercise.name}</h1>
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div>
               <dt className="text-white/45">Sets</dt>
               <dd className="font-bold">{item.sets ?? 1}</dd>
@@ -265,17 +265,17 @@ export function ExerciseView({ workout, exerciseId }: { workout: Workout; exerci
             </div>
             <div className="col-span-2 rounded-2xl bg-zenith-500/15 p-3">
               <dt className="text-zenith-300">Station</dt>
-              <dd className="text-xl font-black text-zenith-400">{item.exercise.stationDisplay}</dd>
+              <dd className="text-xl font-black leading-tight text-zenith-400">{item.exercise.stationDisplay}</dd>
             </div>
           </dl>
-          <p className="mt-5 text-sm text-white/65">{item.exercise.instructions}</p>
+          <p className="mt-3 line-clamp-3 text-sm leading-snug text-white/65">{item.exercise.instructions}</p>
         </div>
       </section>
-      <nav className="fixed bottom-3 left-1/2 z-30 grid w-[calc(100%-24px)] max-w-md -translate-x-1/2 grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-[#10201b]/95 p-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur">
+      <nav className="fixed bottom-2 left-1/2 z-30 grid w-[calc(100%-16px)] max-w-md -translate-x-1/2 grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-[#10201b]/95 p-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur">
         <Link aria-disabled={!prev} href={prev ? `/workout/exercise/${prev.id}` : "#"} className="flex min-h-12 items-center justify-center rounded-xl bg-white/5 text-sm">
           Previous
         </Link>
-        <button onClick={() => mark(!item.completed)} className="min-h-12 rounded-xl bg-zenith-500 px-2 text-sm font-bold text-slate-950">
+        <button onClick={() => mark(!item.completed)} className="min-h-12 rounded-xl bg-zenith-500 px-1 text-sm font-bold leading-tight text-slate-950">
           {item.completed ? "Undo" : "Mark Complete"}
         </button>
         <Link aria-disabled={!next} href={next ? `/workout/exercise/${next.id}` : `/workout/day/${item.dayNumber}`} className="flex min-h-12 items-center justify-center rounded-xl bg-white/5 text-sm">

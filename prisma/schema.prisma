@@ -397,6 +397,8 @@ model Exercise {
   movementType       String?
   videoStatus        ExerciseVideoStatus   @default(NEEDS_OWNER_CONFIRMATION)
   youtubeVideoId     String?
+  videoStartSeconds  Int?
+  videoEndSeconds    Int?
   videoTitle         String?
   videoChannel       String?
   videoDuration      String?

@@ -21,9 +21,21 @@ export function parseYouTubeId(input: string): string | null {
   }
 }
 
-export function youtubeEmbedUrl(id: string): string {
+export function youtubeEmbedUrl(id: string, options?: { startSeconds?: number | null; endSeconds?: number | null; loopSegment?: boolean }): string {
   if (!YOUTUBE_ID.test(id)) throw new Error("Invalid YouTube video ID");
-  return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1`;
+  const params = new URLSearchParams({ rel: "0", modestbranding: "1" });
+  const startSeconds = options?.startSeconds;
+  const endSeconds = options?.endSeconds;
+  if (Number.isInteger(startSeconds) && startSeconds! >= 0) params.set("start", String(startSeconds));
+  if (Number.isInteger(endSeconds) && endSeconds! > 0) params.set("end", String(endSeconds));
+  if (options?.loopSegment) {
+    params.set("loop", "1");
+    params.set("playlist", id);
+    params.set("autoplay", "1");
+    params.set("mute", "1");
+    params.set("playsinline", "1");
+  }
+  return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
 }
 
 export function youtubeThumbnailUrl(id: string): string {
