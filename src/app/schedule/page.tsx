@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getNextScheduleSession, getScheduleSessions } from "@/services/schedule.service";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock } from "lucide-react";
+import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 
 export default async function Page() {
   if (!(await getSession())?.memberId) redirect("/login");
@@ -11,7 +12,7 @@ export default async function Page() {
   const groups = [1, 2, 3, 4, 5, 6].map((day) => ({ day, sessions: schedule.filter((x) => x.day === day) })).filter((group) => group.sessions.length);
 
   return (
-    <main className="safe-bottom mx-auto min-h-dvh max-w-3xl px-4 py-6">
+    <main className="safe-bottom mx-auto min-h-dvh max-w-3xl px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))]">
       <Link href="/dashboard" className="inline-flex min-h-11 items-center gap-2 text-white/60"><ArrowLeft size={18} />Dashboard</Link>
       <header className="mt-5"><p className="text-sm text-zenith-400">WEEKLY PROGRAM</p><h1 className="text-3xl font-black">Batch schedule</h1></header>
       <article className="mt-6 rounded-3xl bg-gradient-to-br from-zenith-500 to-emerald-800 p-6">
@@ -30,11 +31,7 @@ export default async function Page() {
           ))}</div>
         </section>
       ))}</div>
-      <nav className="fixed bottom-3 left-1/2 z-20 flex w-[calc(100%-24px)] max-w-md -translate-x-1/2 justify-around rounded-2xl border border-white/10 bg-[#10201b]/95 p-2">
-        <Link href="/dashboard" className="min-h-12 rounded-xl px-5 py-3 text-sm text-white/60">Home</Link>
-        <Link href="/points" className="min-h-12 rounded-xl px-5 py-3 text-sm text-white/60">Points</Link>
-        <span className="min-h-12 rounded-xl bg-zenith-500/20 px-5 py-3 text-sm text-zenith-400">Schedule</span>
-      </nav>
+      <MemberBottomNav active="schedule" />
     </main>
   );
 }

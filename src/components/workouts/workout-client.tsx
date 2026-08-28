@@ -180,7 +180,7 @@ export function WorkoutDashboard({ workout, cards }: { workout: Workout; cards: 
 
 export function WorkoutDayView({ day }: { day: Day }) {
   return (
-    <main className="mx-auto max-w-4xl px-4 pb-28 pt-6 sm:px-8">
+    <main className="mx-auto max-w-4xl px-4 pb-28 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-8">
       <Link href="/workout" className="inline-flex items-center gap-2 text-sm text-white/60">
         <ArrowLeft size={16} />
         Workout
@@ -241,7 +241,7 @@ export function ExerciseView({ workout, exerciseId }: { workout: Workout; exerci
   if (!item) return null;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-2 pb-[5.25rem] pt-3 sm:px-5">
+    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col px-2 pb-[5.25rem] pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-5">
       <Link href={`/workout/day/${item.dayNumber}`} className="inline-flex items-center gap-2 px-1 text-sm text-white/60">
         <ArrowLeft size={16} />
         Day {item.dayNumber}
@@ -288,7 +288,7 @@ export function ExerciseView({ workout, exerciseId }: { workout: Workout; exerci
 
 export function HistoryView({ items }: { items: Awaited<ReturnType<typeof import("@/services/workout.service").getWorkoutHistory>> }) {
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-28 pt-6 sm:px-8">
+    <main className="mx-auto max-w-3xl px-4 pb-28 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-8">
       <Link href="/workout" className="inline-flex items-center gap-2 text-sm text-white/60">
         <ArrowLeft size={16} />
         Workout
