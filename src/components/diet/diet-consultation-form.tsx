@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, Apple, ClipboardList, HeartPulse, Loader2, Send, UserRound } from "lucide-react";
+import { Activity, Apple, ClipboardList, HeartPulse, Loader2, MessageCircle, Send, UserRound } from "lucide-react";
 
 const GOOGLE_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbyES1_k08eR7bJkcXEDBG1IJQMa4op3TmH9ebg-Uu4_A4aSlK1wFyfuEhI4zQO3TbCi8w/exec";
 const ZENITH_WHATSAPP_NUMBER = "919272112745";
+const PAID_CONSULTATION_WHATSAPP_NUMBER = "918999699811";
+const PAID_CONSULTATION_MESSAGE =
+  "Hey Zenith Fitness, I want to have a paid diet consultation. Please schedule me an appointment with our nutritionist whenever possible.";
 
 type Prefill = {
   fullName: string;
@@ -81,6 +84,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof UserRound; titl
 }
 
 export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
+  const [choice, setChoice] = useState<"free" | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const defaultMedical = useMemo(() => {
@@ -128,8 +132,48 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
     }
   }
 
+  function openPaidConsultation() {
+    const url = `https://wa.me/${PAID_CONSULTATION_WHATSAPP_NUMBER}?text=${encodeURIComponent(PAID_CONSULTATION_MESSAGE)}`;
+    window.open(url, "_blank", "noopener,noreferrer") ?? (window.location.href = url);
+  }
+
+  if (choice !== "free") {
+    return (
+      <section className="grid gap-4 md:grid-cols-2">
+        <button type="button" onClick={() => setChoice("free")} className="group min-h-64 rounded-3xl border border-zenith-400/30 bg-zenith-500/10 p-6 text-left transition hover:border-zenith-300 hover:bg-zenith-500/15">
+          <span className="inline-flex rounded-2xl bg-zenith-500/20 p-3 text-zenith-300">
+            <Apple size={26} />
+          </span>
+          <h2 className="mt-5 text-2xl font-black">Free Diet Plan</h2>
+          <p className="mt-3 text-sm leading-6 text-white/62">Includes only diet plan.</p>
+          <span className="mt-8 inline-flex min-h-11 items-center justify-center rounded-2xl bg-zenith-500 px-5 font-bold text-[#07110e]">
+            Open Form
+          </span>
+        </button>
+
+        <button type="button" onClick={openPaidConsultation} className="group min-h-64 rounded-3xl border border-white/10 bg-white/[.045] p-6 text-left transition hover:border-zenith-300/60 hover:bg-white/[.07]">
+          <span className="inline-flex rounded-2xl bg-white/10 p-3 text-zenith-300">
+            <MessageCircle size={26} />
+          </span>
+          <h2 className="mt-5 text-2xl font-black">Paid Diet Consultation</h2>
+          <p className="mt-3 text-sm leading-6 text-white/62">Includes 1 on 1 consultation with a certified nutritionist, diet plan, and doubt clearing.</p>
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <strong className="text-2xl text-zenith-300">Rs 1000</strong>
+            <span className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-zenith-400/40 px-5 font-bold text-zenith-300">
+              WhatsApp
+            </span>
+          </div>
+        </button>
+      </section>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="space-y-5">
+      <button type="button" onClick={() => setChoice(null)} className="inline-flex min-h-11 items-center rounded-2xl border border-white/10 px-4 text-sm text-white/65">
+        Change diet option
+      </button>
+
       {status !== "idle" && status !== "loading" && (
         <div className={`rounded-2xl border p-4 text-sm ${status === "success" ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-100" : "border-red-300/25 bg-red-400/10 text-red-100"}`} role="status">
           {message}

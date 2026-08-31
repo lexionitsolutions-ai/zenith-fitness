@@ -93,6 +93,12 @@ async function sendFcmMessage(token: string, payload: NotificationPayload) {
           title: payload.title,
           body: payload.body ?? undefined,
         },
+        android: {
+          priority: "HIGH",
+          notification: {
+            channel_id: "zenith_updates",
+          },
+        },
         data: stringifyData(payload.data),
       },
     }),

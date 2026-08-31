@@ -5,6 +5,22 @@ import { Capacitor } from "@capacitor/core";
 import { PushNotifications, type Token } from "@capacitor/push-notifications";
 
 const registeredTokenKey = "zenith.pushToken";
+const androidChannelId = "zenith_updates";
+
+async function ensureAndroidNotificationChannel() {
+  if (Capacitor.getPlatform() !== "android") return;
+
+  await PushNotifications.createChannel({
+    id: androidChannelId,
+    name: "Zenith Updates",
+    description: "Membership, workout, points, and gym updates from Zenith Fitness.",
+    importance: 4,
+    visibility: 1,
+    lights: true,
+    lightColor: "#e5c553",
+    vibration: true,
+  });
+}
 
 async function saveToken(token: string) {
   const platform = Capacitor.getPlatform() === "ios" ? "IOS" : "ANDROID";
@@ -49,6 +65,8 @@ export function PushNotificationRegistration() {
         console.info("[push] notification permission not granted", permissions.receive);
         return;
       }
+
+      await ensureAndroidNotificationChannel();
 
       const registrationListener = await PushNotifications.addListener("registration", (token: Token) => {
         void saveToken(token.value).catch(console.error);

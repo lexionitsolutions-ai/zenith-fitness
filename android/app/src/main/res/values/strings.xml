@@ -4,4 +4,6 @@
     <string name="title_activity_main">Zenith Fitness</string>
     <string name="package_name">com.zenithfitness.app</string>
     <string name="custom_url_scheme">com.zenithfitness.app</string>
+    <string name="default_notification_channel_id">zenith_updates</string>
+    <string name="default_notification_channel_name">Zenith Updates</string>
 </resources>
