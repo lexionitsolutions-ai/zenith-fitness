@@ -93,7 +93,7 @@ export function AnnouncementAdmin({ initial }: { initial: Row[] }) {
 
       <form onSubmit={submit} className="mt-7 space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
         <input name="title" required placeholder="Announcement title" className="w-full rounded-xl bg-black/20 p-3" />
-        <textarea name="message" placeholder="Message (optional when adding an image)" className="w-full rounded-xl bg-black/20 p-3" />
+        <textarea name="message" placeholder="Message, WhatsApp group link, or any URL members should open" className="w-full rounded-xl bg-black/20 p-3" />
         <label className="block text-sm">
           Optional image
           <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => choose(event.target.files?.[0])} className="mt-2 block w-full" />

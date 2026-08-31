@@ -1,9 +1,21 @@
 "use client";
 
-import { Bell, Clock, X } from "lucide-react";
+import { Bell, Clock, Download, ExternalLink, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Data = Awaited<ReturnType<typeof import("@/services/announcement.service").getDashboardAnnouncements>>;
+
+function linkedText(text: string) {
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlPattern).map((part, index) => {
+    if (!/^https?:\/\//.test(part)) return <span key={`${part}-${index}`}>{part}</span>;
+    return (
+      <a key={part} href={part} target="_blank" rel="noreferrer" className="font-bold text-zenith-300 underline decoration-zenith-300/40 underline-offset-4">
+        {part}
+      </a>
+    );
+  });
+}
 
 export function AnnouncementWindow({ data }: { data: Data }) {
   const [hidden, setHidden] = useState(false);
@@ -62,15 +74,31 @@ export function AnnouncementWindow({ data }: { data: Data }) {
         {current.announcements.length > 0 && (
           <div className="mt-4 space-y-3 border-t border-white/10 pt-4">
             {current.announcements.map((announcement) => (
-              <article key={announcement.id} className="rounded-2xl bg-white/[.06] p-4">
+              <article key={announcement.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
                 <div className="flex gap-2">
                   <Bell size={18} className="shrink-0 text-amber-300" />
-                  <div>
-                    <b>{announcement.title}</b>
-                    {announcement.message && <p className="mt-1 text-sm text-white/65">{announcement.message}</p>}
+                  <div className="min-w-0 flex-1">
+                    <b className="block text-base leading-snug">{announcement.title}</b>
+                    {announcement.message && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{linkedText(announcement.message)}</p>}
                   </div>
                 </div>
-                {announcement.imageData && <img src={announcement.imageData} alt={announcement.title} className="mt-3 max-h-72 w-full rounded-xl object-cover" loading="lazy" />}
+                {announcement.imageData && (
+                  <div className="mt-4">
+                    <a href={announcement.imageData} target="_blank" rel="noreferrer" className="block rounded-2xl bg-black/30 p-2">
+                      <img src={announcement.imageData} alt={announcement.title} className="max-h-[70vh] w-full rounded-xl object-contain" loading="lazy" />
+                    </a>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <a href={announcement.imageData} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-bold text-white/75">
+                        <ExternalLink size={16} />
+                        Open
+                      </a>
+                      <a href={announcement.imageData} download={`${announcement.title || "zenith-announcement"}.png`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-zenith-500 px-3 text-sm font-bold text-[#07110e]">
+                        <Download size={16} />
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                )}
               </article>
             ))}
           </div>
