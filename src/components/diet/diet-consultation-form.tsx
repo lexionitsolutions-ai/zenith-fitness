@@ -249,7 +249,7 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
         <TextAreaField label="Special Instructions" name="specialInstructions" />
       </Section>
 
-      <div className="sticky bottom-[6.8rem] z-10 rounded-3xl border border-white/10 bg-[#10201b]/95 p-4 shadow-2xl backdrop-blur sm:flex sm:items-center sm:justify-between">
+      <div className="rounded-3xl border border-white/10 bg-[#10201b]/95 p-4 shadow-2xl sm:flex sm:items-center sm:justify-between">
         <p className="text-sm text-white/50">Fields marked required must be completed.</p>
         <button type="submit" disabled={status === "loading"} className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zenith-500 px-5 font-bold text-[#07110e] disabled:opacity-70 sm:mt-0 sm:w-auto">
           {status === "loading" ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
