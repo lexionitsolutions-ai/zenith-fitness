@@ -1,10 +1,10 @@
 "use client";
 
-import { LoaderCircle, Pencil, Save } from "lucide-react";
+import { LoaderCircle, Lock, Pencil, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-type Profile = { gender: string | null; birthDate: string | null; address: string | null; medicalHistory: string | null };
+type Profile = { fullName: string; mobile: string | null; gender: string | null; birthDate: string | null; address: string | null; medicalHistory: string | null };
 
 export function ProfileEditor({ profile, complete }: { profile: Profile; complete: boolean }) {
   const router = useRouter();
@@ -17,7 +17,7 @@ export function ProfileEditor({ profile, complete }: { profile: Profile; complet
     setBusy(true);
     setMessage("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/member/profile", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ gender: form.get("gender"), birthDate: form.get("birthDate") || null, address: form.get("address"), medicalHistory: form.get("medicalHistory") }) });
+    const response = await fetch("/api/member/profile", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ fullName: form.get("fullName"), gender: form.get("gender"), birthDate: form.get("birthDate") || null, address: form.get("address"), medicalHistory: form.get("medicalHistory") }) });
     const result = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(result.error?.message ?? "Unable to update profile.");
@@ -40,6 +40,11 @@ export function ProfileEditor({ profile, complete }: { profile: Profile; complet
   return (
     <form onSubmit={submit} className="mt-5 space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
+        <input name="fullName" defaultValue={profile.fullName} placeholder="Full name" className="min-h-12 rounded-xl bg-black/20 p-3" />
+        <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-black/20 p-3 text-white/55">
+          <span>{profile.mobile ?? "Phone number not recorded"}</span>
+          <Lock size={16} aria-label="Phone number cannot be edited" />
+        </div>
         <input name="gender" defaultValue={profile.gender ?? ""} placeholder="Gender" className="min-h-12 rounded-xl bg-black/20 p-3" />
         <input name="birthDate" type="date" defaultValue={profile.birthDate ?? ""} className="min-h-12 rounded-xl bg-black/20 p-3" />
       </div>

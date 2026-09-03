@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { MobileNavigationGestures } from "@/components/layout/mobile-navigation-gestures";
 import { PushNotificationRegistration } from "@/components/notifications/push-notification-registration";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <body>
         <PushNotificationRegistration />
+        <MobileNavigationGestures />
         {children}
       </body>
     </html>

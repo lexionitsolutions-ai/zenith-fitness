@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/database/prisma";
 import { calculateMembershipStatus, daysBetween } from "@/lib/utils/status";
 import { AppError } from "@/lib/errors";
+import { getFitnessTarget } from "@/services/fitness-target.service";
 
 export async function getDashboard(memberId: string, now = new Date()) {
   const member = await prisma.member.findUnique({ where: { id: memberId }, include: { memberships: { include: { plan: true } } } });
@@ -20,6 +21,8 @@ export async function getDashboard(memberId: string, now = new Date()) {
   if (selected && Number(selected.pendingAmount) > 0) alerts.push({ type: "PAYMENT_PENDING", severity: "warning", title: "Payment pending", message: `Rs ${Number(selected.pendingAmount).toLocaleString("en-IN")} is pending.` });
   if (completion < 100) alerts.push({ type: "PROFILE_INCOMPLETE", severity: "info", title: "Complete your profile", message: "Fill the remaining safe profile details below." });
 
+  const fitnessTarget = await getFitnessTarget(memberId);
+
   return {
     member: {
       admissionId: member.admissionId,
@@ -35,5 +38,6 @@ export async function getDashboard(memberId: string, now = new Date()) {
     payment: selected ? { finalAmount: Number(selected.finalAmount), amountPaid: Number(selected.amountPaid), pendingAmount: Number(selected.pendingAmount), paymentStatus: selected.paymentStatus, paymentMode: selected.paymentMode } : null,
     alerts,
     dataWarnings: warnings,
+    fitnessTarget,
   };
 }

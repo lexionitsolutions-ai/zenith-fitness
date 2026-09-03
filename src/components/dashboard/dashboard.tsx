@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertTriangle, CreditCard, Dumbbell } from "lucide-react";
+import { AlertTriangle, ArrowRight, CreditCard, Dumbbell, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
 
@@ -13,10 +14,69 @@ const money = (value: number) =>
 const date = (value: string | null) =>
   value ? new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date(`${value}T00:00:00Z`)) : "Needs review";
 
+const oneDecimal = (value: number) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 }).format(value);
+
+function FitnessTargetCard({ data }: { data: Data["fitnessTarget"] }) {
+  const target = data.target;
+  if (!target) {
+    return (
+      <article className="rounded-3xl border border-zenith-400/25 bg-zenith-500/[.09] p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-zenith-300">Set Target</p>
+            <h2 className="mt-2 text-2xl font-black">Set Your Fitness Target</h2>
+            <p className="mt-2 text-sm text-white/60">Track your transformation with regular BMI assessments.</p>
+          </div>
+          <span className="rounded-2xl bg-amber-300/15 p-3 text-amber-200"><Trophy /></span>
+        </div>
+        {!data.rewardClaimed && <p className="mt-5 text-sm font-bold text-amber-200">+50 Points for completing your first BMI assessment</p>}
+        <button onClick={() => location.assign("/set-target")} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-zenith-400 px-5 font-bold text-black">
+          Set Target <ArrowRight size={18} />
+        </button>
+      </article>
+    );
+  }
+  const isWeight = target.goalType === "WEIGHT_LOSS";
+  const completed = target.status === "COMPLETED" || target.progress.reached;
+  const pct = Math.round(target.progress.visualPercentage);
+  return (
+    <article className={`rounded-3xl border p-6 ${target.bmiDue ? "border-amber-300/30 bg-amber-300/[.07]" : "border-white/10 bg-white/[.04]"}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/45">{completed ? "Target Reached" : "My Target"}</p>
+          <h2 className="mt-2 text-2xl font-black">{isWeight ? "Weight Loss" : "Muscle Gain"}</h2>
+        </div>
+        <span className="rounded-2xl bg-white/10 p-3 text-zenith-300"><TrendingDown /></span>
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+        <div><p className="text-white/45">{isWeight ? "Current" : "Current Muscle"}</p><b>{oneDecimal(isWeight ? target.latest.weightKg : target.latest.skeletalMuscleMassKg)} kg</b></div>
+        <div><p className="text-white/45">{isWeight ? "Target" : "Target Muscle"}</p><b>{oneDecimal(isWeight ? target.targetWeightKg! : target.targetMuscleMassKg!)} kg</b></div>
+      </div>
+      <div className="mt-5 h-3 overflow-hidden rounded-full bg-black/30"><div className="h-full rounded-full bg-zenith-400" style={{ width: `${pct}%` }} /></div>
+      <p className="mt-2 text-sm font-bold">{pct} / 100 Reached</p>
+      <p className={`mt-3 text-sm ${target.bmiDue ? "font-bold text-amber-200" : "text-white/55"}`}>{target.bmiDue ? "BMI Check Due" : `Next BMI Check: ${date(target.nextBmiDate)}`}</p>
+      <button onClick={() => location.assign(target.bmiDue ? "/set-target?mode=update" : completed ? "/set-target" : "/my-progress")} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-white px-5 font-bold text-black">
+        {target.bmiDue ? "Update BMI" : completed ? "Set New Target" : "View Progress"} <ArrowRight size={18} />
+      </button>
+    </article>
+  );
+}
+
 export function Dashboard({ data }: { data: Data }) {
   const router = useRouter();
   const membership = data.membership;
   const payment = data.payment;
+
+  useEffect(() => {
+    const target = data.fitnessTarget.target;
+    if (!target?.bmiDue) return;
+    const key = `bmi-reminder:${target.id}:${target.nextBmiDate}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, new Date().toISOString());
+    if (confirm("Time for Your BMI Check!\n\nIt's been 45 days since your last BMI assessment. Get your BMI test done to see how far you've progressed toward your target.")) {
+      router.push("/set-target?mode=update");
+    }
+  }, [data.fitnessTarget.target, router]);
 
   async function logout() {
     await unregisterPushNotifications().catch(console.error);
@@ -91,6 +151,10 @@ export function Dashboard({ data }: { data: Data }) {
         )}
       </section>
 
+      <section className="mt-7">
+        <FitnessTargetCard data={data.fitnessTarget} />
+      </section>
+
       {data.alerts.length > 0 && (
         <section className="mt-7 space-y-3">
           <h2 className="font-bold">For you</h2>
@@ -137,7 +201,7 @@ export function Dashboard({ data }: { data: Data }) {
             <dd>{data.member.medicalHistory ?? "Missing"}</dd>
           </div>
         </dl>
-        <ProfileEditor complete={data.member.profileCompletionPercentage === 100} profile={{ gender: data.member.gender, birthDate: data.member.birthDate, address: data.member.address, medicalHistory: data.member.medicalHistory }} />
+        <ProfileEditor complete={data.member.profileCompletionPercentage === 100} profile={{ fullName: data.member.name, mobile: data.member.mobile, gender: data.member.gender, birthDate: data.member.birthDate, address: data.member.address, medicalHistory: data.member.medicalHistory }} />
       </section>
     </main>
   );

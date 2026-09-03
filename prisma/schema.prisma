@@ -16,6 +16,7 @@ enum Role {
 enum PointTransactionType {
   DAILY_VISIT
   TARGET_COMPLETION
+  INITIAL_BMI_TARGET_SETUP
   ADMIN_ADJUSTMENT
   REVERSAL
 }
@@ -26,6 +27,21 @@ enum TargetStatus {
   COMPLETED
   CANCELLED
   EXPIRED
+}
+
+enum FitnessTargetGoalType {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+}
+
+enum FitnessTargetStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum BmiAssessmentSource {
+  MEMBER_ENTERED_BMI_REPORT
 }
 
 enum FitnessGoal {
@@ -149,6 +165,8 @@ model Member {
   memberships          Membership[]
   pointTransactions    PointTransaction[]
   targets              MemberTarget[]
+  fitnessTargets       MemberFitnessTarget[]
+  bmiAssessments       BmiAssessment[]
 
   @@index([mobileNumber])
 }
@@ -300,6 +318,51 @@ model PointTransaction {
 
   @@index([memberId, createdAt])
   @@index([businessDate, transactionType])
+}
+
+model MemberFitnessTarget {
+  id                      String                @id @default(uuid()) @db.Uuid
+  memberId                String                @db.Uuid
+  member                  Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  goalType                FitnessTargetGoalType
+  baselineBmiAssessmentId String?               @unique @db.Uuid
+  baselineBmiAssessment   BmiAssessment?        @relation("FitnessTargetBaseline", fields: [baselineBmiAssessmentId], references: [id])
+  bmiAssessments          BmiAssessment[]       @relation("FitnessTargetAssessments")
+  baselineWeightKg        Decimal               @db.Decimal(6, 2)
+  baselineMuscleMassKg    Decimal               @db.Decimal(6, 2)
+  targetWeightKg          Decimal?              @db.Decimal(6, 2)
+  targetMuscleMassKg      Decimal?              @db.Decimal(6, 2)
+  startDate               DateTime              @db.Date
+  targetEndDate           DateTime              @db.Date
+  status                  FitnessTargetStatus   @default(ACTIVE)
+  completedAt             DateTime?
+  lastReminderShownAt     DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  @@index([memberId, status])
+}
+
+model BmiAssessment {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  memberId              String                 @db.Uuid
+  member                Member                 @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  fitnessTargetId       String                 @db.Uuid
+  fitnessTarget         MemberFitnessTarget    @relation("FitnessTargetAssessments", fields: [fitnessTargetId], references: [id], onDelete: Cascade)
+  baselineForTarget     MemberFitnessTarget?   @relation("FitnessTargetBaseline")
+  assessmentNumber      Int
+  assessmentDate        DateTime               @db.Date
+  weightKg              Decimal                @db.Decimal(6, 2)
+  skeletalMuscleMassKg  Decimal                @db.Decimal(6, 2)
+  fatMassKg             Decimal                @db.Decimal(6, 2)
+  bodyFatPercentage     Decimal                @db.Decimal(5, 2)
+  source                BmiAssessmentSource    @default(MEMBER_ENTERED_BMI_REPORT)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@unique([fitnessTargetId, assessmentNumber])
+  @@index([memberId, assessmentDate])
+  @@index([fitnessTargetId, assessmentDate])
 }
 
 model MemberTarget {
