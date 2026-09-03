@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
+import { Prisma } from "@prisma/client";
 import { calculateMembershipStatus, daysBetween } from "@/lib/utils/status";
 import { AppError } from "@/lib/errors";
 import { getFitnessTarget } from "@/services/fitness-target.service";
@@ -21,7 +22,13 @@ export async function getDashboard(memberId: string, now = new Date()) {
   if (selected && Number(selected.pendingAmount) > 0) alerts.push({ type: "PAYMENT_PENDING", severity: "warning", title: "Payment pending", message: `Rs ${Number(selected.pendingAmount).toLocaleString("en-IN")} is pending.` });
   if (completion < 100) alerts.push({ type: "PROFILE_INCOMPLETE", severity: "info", title: "Complete your profile", message: "Fill the remaining safe profile details below." });
 
-  const fitnessTarget = await getFitnessTarget(memberId);
+  let fitnessTarget: Awaited<ReturnType<typeof getFitnessTarget>> = { target: null, rewardClaimed: false };
+  try {
+    fitnessTarget = await getFitnessTarget(memberId);
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
+    warnings.push("Fitness target tables are not migrated yet.");
+  }
 
   return {
     member: {
