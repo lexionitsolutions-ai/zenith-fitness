@@ -1,0 +1,15 @@
+ALTER TABLE "Announcement" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "BmiAssessment" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "Exercise" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "ExerciseVideoCandidate" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "GymStation" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "MemberExerciseProgress" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "MemberFitnessTarget" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "MemberTarget" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "MemberWorkoutAssignment" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "NotificationDelivery" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "PointTransaction" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "PushDevice" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "WorkoutPlan" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "WorkoutPlanDay" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+ALTER TABLE "WorkoutPlanExercise" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
