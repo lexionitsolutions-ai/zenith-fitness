@@ -3,7 +3,7 @@ import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { ProgressClient } from "@/components/fitness-target/progress-client";
 import { ZenithLogo } from "@/components/brand/zenith-logo";
 import { getSession } from "@/lib/auth/session";
-import { getFitnessTarget } from "@/services/fitness-target.service";
+import { getFitnessTargetOrEmpty } from "@/services/fitness-target.service";
 
 export default async function Page() {
   const session = await getSession();
@@ -11,7 +11,7 @@ export default async function Page() {
   return (
     <>
       <div className="app-topbar border-b border-white/10"><div className="safe-x mx-auto flex max-w-3xl items-center px-4 py-3"><ZenithLogo compact /></div></div>
-      <ProgressClient data={await getFitnessTarget(session.memberId)} />
+      <ProgressClient data={await getFitnessTargetOrEmpty(session.memberId)} />
       <MemberBottomNav active="home" />
     </>
   );

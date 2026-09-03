@@ -118,6 +118,22 @@ export async function getFitnessTarget(memberId: string) {
   return serialize(await findActiveTarget(memberId), await hasInitialTargetReward(memberId));
 }
 
+export async function getFitnessTargetOrEmpty(memberId: string) {
+  try {
+    return await getFitnessTarget(memberId);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") return { target: null, rewardClaimed: false };
+    throw error;
+  }
+}
+
+export function mapMissingFitnessTargetMigration(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+    return new AppError("FITNESS_TARGET_MIGRATION_REQUIRED", "Fitness target database tables are not migrated yet. Please run the latest Prisma migration.", 503);
+  }
+  return error;
+}
+
 export async function createFitnessTarget(memberId: string, input: unknown) {
   const value = createFitnessTargetSchema.parse(input);
   const { assessmentDate: _initialAssessmentDate, ...bmiValues } = value.bmi;

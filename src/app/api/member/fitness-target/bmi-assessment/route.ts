@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { AppError, apiError } from "@/lib/errors";
-import { addBmiAssessment, updateBmiAssessment } from "@/services/fitness-target.service";
+import { addBmiAssessment, mapMissingFitnessTargetMigration, updateBmiAssessment } from "@/services/fitness-target.service";
 
 export async function POST(req: Request) {
   try {
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     if (!session?.memberId) throw new AppError("UNAUTHORIZED", "Authentication required.", 401);
     return Response.json({ success: true, data: await addBmiAssessment(session.memberId, await req.json()) });
   } catch (error) {
-    return apiError(error);
+    return apiError(mapMissingFitnessTargetMigration(error));
   }
 }
 
@@ -18,6 +18,6 @@ export async function PATCH(req: Request) {
     if (!session?.memberId) throw new AppError("UNAUTHORIZED", "Authentication required.", 401);
     return Response.json({ success: true, data: await updateBmiAssessment(session.memberId, await req.json()) });
   } catch (error) {
-    return apiError(error);
+    return apiError(mapMissingFitnessTargetMigration(error));
   }
 }
