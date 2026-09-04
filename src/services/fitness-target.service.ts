@@ -110,6 +110,42 @@ async function findActiveTarget(memberId: string) {
   });
 }
 
+export async function getStaffMemberProgressList() {
+  const targets = await prisma.memberFitnessTarget.findMany({
+    where: { status: "ACTIVE" },
+    include: {
+      member: { select: { admissionId: true, fullName: true } },
+      baselineBmiAssessment: true,
+      bmiAssessments: { orderBy: [{ assessmentDate: "desc" }, { createdAt: "desc" }] },
+    },
+  });
+
+  return targets
+    .flatMap((target) => {
+      const latest = target.bmiAssessments[0];
+      const baseline = target.baselineBmiAssessment ?? target.bmiAssessments[target.bmiAssessments.length - 1];
+      if (!latest || !baseline) return [];
+      const progress =
+        target.goalType === "WEIGHT_LOSS"
+          ? calculateWeightLossProgress(Number(target.baselineWeightKg), Number(latest.weightKg), Number(target.targetWeightKg))
+          : calculateMuscleGainProgress(Number(target.baselineMuscleMassKg), Number(latest.skeletalMuscleMassKg), Number(target.targetMuscleMassKg));
+      return {
+        id: target.id,
+        admissionId: target.member.admissionId,
+        memberName: target.member.fullName,
+        goal: target.goalType === "WEIGHT_LOSS" ? "Weight Loss" : "Muscle Gain",
+        targetRange:
+          target.goalType === "WEIGHT_LOSS"
+            ? `${Number(target.baselineWeightKg)} kg to ${Number(target.targetWeightKg)} kg`
+            : `${Number(target.baselineMuscleMassKg)} kg to ${Number(target.targetMuscleMassKg)} kg`,
+        progress: Math.round(progress.visualPercentage),
+        latestAssessmentDate: formatDateOnly(latest.assessmentDate),
+        nextBmiDate: formatDateOnly(calculateNextBmiDate(latest.assessmentDate)),
+      };
+    })
+    .sort((a, b) => b.progress - a.progress || a.memberName.localeCompare(b.memberName));
+}
+
 async function hasInitialTargetReward(memberId: string) {
   return !!(await prisma.pointTransaction.findUnique({ where: { referenceKey: `initial-bmi-target-setup:${memberId}` }, select: { id: true } }));
 }

@@ -8,6 +8,7 @@ import {
   ScanLine,
   ScrollText,
   SlidersHorizontal,
+  TrendingUp,
   CalendarDays,
   Bell,
   Upload,
@@ -35,6 +36,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
       : [
           { href: "/staff", label: "Scan", icon: ScanLine },
           { href: "/staff/members", label: "Members", icon: UserRoundCog },
+          { href: "/staff/progress", label: "Progress", icon: TrendingUp },
           { href: "/staff/points", label: "Points", icon: SlidersHorizontal },
         ];
 
