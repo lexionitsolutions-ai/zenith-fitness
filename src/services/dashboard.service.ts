@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { calculateMembershipStatus, daysBetween } from "@/lib/utils/status";
 import { AppError } from "@/lib/errors";
 import { getFitnessTarget } from "@/services/fitness-target.service";
+import { getCurrentDailyVisitStreak } from "@/services/points.service";
 
 export async function getDashboard(memberId: string, now = new Date()) {
   const member = await prisma.member.findUnique({ where: { id: memberId }, include: { memberships: { include: { plan: true } } } });
@@ -23,11 +24,18 @@ export async function getDashboard(memberId: string, now = new Date()) {
   if (completion < 100) alerts.push({ type: "PROFILE_INCOMPLETE", severity: "info", title: "Complete your profile", message: "Fill the remaining safe profile details below." });
 
   let fitnessTarget: Awaited<ReturnType<typeof getFitnessTarget>> = { target: null, rewardClaimed: false };
+  let currentStreak = 0;
   try {
     fitnessTarget = await getFitnessTarget(memberId);
   } catch (error) {
     if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
     warnings.push("Fitness target tables are not migrated yet.");
+  }
+  try {
+    currentStreak = await getCurrentDailyVisitStreak(memberId);
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
+    warnings.push("Point tables are not migrated yet.");
   }
 
   return {
@@ -46,5 +54,6 @@ export async function getDashboard(memberId: string, now = new Date()) {
     alerts,
     dataWarnings: warnings,
     fitnessTarget,
+    currentStreak,
   };
 }

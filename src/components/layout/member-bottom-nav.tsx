@@ -7,7 +7,7 @@ export function MemberBottomNav({ active }: { active: MemberNavKey }) {
   const items = [
     { key: "home", href: "/dashboard", label: "Home", icon: Home },
     { key: "workout", href: "/workout", label: "Workout", icon: Dumbbell },
-    { key: "diet", href: "/diet-consultation", label: "Diet", icon: Apple },
+    { key: "diet", href: "/diet-consultation", label: "Diet / PT", icon: Apple },
     { key: "points", href: "/points", label: "Points", icon: QrCode },
     { key: "schedule", href: "/schedule", label: "Schedule", icon: CalendarDays },
   ] as const;

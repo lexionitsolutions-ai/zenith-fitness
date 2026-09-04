@@ -1,10 +1,11 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, CreditCard, Dumbbell, TrendingDown, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowRight, CreditCard, Dumbbell, Flame, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
+import { getStreakAward } from "@/lib/utils/streak-awards";
 
 type Data = Awaited<ReturnType<typeof import("@/services/dashboard.service").getDashboard>>;
 
@@ -66,6 +67,7 @@ export function Dashboard({ data }: { data: Data }) {
   const router = useRouter();
   const membership = data.membership;
   const payment = data.payment;
+  const streakAward = getStreakAward(data.currentStreak);
 
   useEffect(() => {
     const target = data.fitnessTarget.target;
@@ -121,6 +123,24 @@ export function Dashboard({ data }: { data: Data }) {
           )}
         </article>
 
+        <article className="rounded-3xl border border-amber-300/25 bg-amber-300/[.07] p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-200">Daily Streak</p>
+              <h2 className="mt-2 text-3xl font-black">{data.currentStreak} day{data.currentStreak === 1 ? "" : "s"}</h2>
+              <p className="mt-1 text-lg font-black text-amber-100">{streakAward.emoji} {streakAward.label}</p>
+              <p className="mt-2 text-sm text-white/58">Scan daily to keep your streak alive.</p>
+            </div>
+            <span className="rounded-2xl bg-amber-300/15 p-3 text-amber-200"><Flame /></span>
+          </div>
+        </article>
+      </section>
+
+      <section className="mt-7">
+        <FitnessTargetCard data={data.fitnessTarget} />
+      </section>
+
+      <section className="mt-7 grid gap-4 md:grid-cols-2">
         {payment && (
           <article className="rounded-3xl border border-white/10 bg-white/[.04] p-6">
             <div className="flex items-center gap-3">
@@ -149,10 +169,6 @@ export function Dashboard({ data }: { data: Data }) {
             <p className="mt-6 text-sm text-white/50">Mode: {payment.paymentMode ?? "Not recorded"}</p>
           </article>
         )}
-      </section>
-
-      <section className="mt-7">
-        <FitnessTargetCard data={data.fitnessTarget} />
       </section>
 
       {data.alerts.length > 0 && (

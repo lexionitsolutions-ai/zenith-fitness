@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Activity, Apple, ClipboardList, HeartPulse, Loader2, MessageCircle, Send, UserRound } from "lucide-react";
+import { Activity, Apple, ClipboardList, Dumbbell, HeartPulse, Loader2, MessageCircle, Send, ShieldCheck, Sparkles, Target, TrendingUp, UserRound } from "lucide-react";
 
 const GOOGLE_APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbyES1_k08eR7bJkcXEDBG1IJQMa4op3TmH9ebg-Uu4_A4aSlK1wFyfuEhI4zQO3TbCi8w/exec";
@@ -9,6 +9,8 @@ const ZENITH_WHATSAPP_NUMBER = "919272112745";
 const PAID_CONSULTATION_WHATSAPP_NUMBER = "918999699811";
 const PAID_CONSULTATION_MESSAGE =
   "Hey Zenith Fitness, I want to have a paid diet consultation. Please schedule me an appointment with our nutritionist whenever possible.";
+const PT_CONSULTATION_MESSAGE =
+  "Hey Zenith Fitness, I want to start personal training. Please arrange a consultation with a certified trainer whenever possible so we can discuss my goals, training plan, and next steps.";
 
 type Prefill = {
   fullName: string;
@@ -38,6 +40,14 @@ const medicalConditions = [
 ];
 const planTypes = ["Fat Loss Plan", "Weight Gain Plan", "Muscle Gain Plan", "Maintenance Plan", "Medical Support Plan"];
 const cuisines = ["Maharashtrian", "North Indian", "South Indian", "Mixed Indian", "Simple Home Food"];
+const personalTrainingServices = [
+  { title: "1-1 Personal Training", icon: Dumbbell },
+  { title: "Target Based Approach", icon: Target },
+  { title: "Goal Setting", icon: Sparkles },
+  { title: "Diet Plan", icon: Apple },
+  { title: "Certified Trainer Guidance", icon: ShieldCheck },
+  { title: "Result Tracking", icon: TrendingUp },
+];
 
 function SelectField({ label, name, required, options, defaultValue = "" }: { label: string; name: string; required?: boolean; options: string[]; defaultValue?: string }) {
   return (
@@ -84,7 +94,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof UserRound; titl
 }
 
 export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
-  const [choice, setChoice] = useState<"free" | null>(null);
+  const [choice, setChoice] = useState<"free" | "pt" | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const defaultMedical = useMemo(() => {
@@ -137,9 +147,58 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
     window.open(url, "_blank", "noopener,noreferrer") ?? (window.location.href = url);
   }
 
+  function openPtConsultation() {
+    const url = `https://wa.me/${PAID_CONSULTATION_WHATSAPP_NUMBER}?text=${encodeURIComponent(PT_CONSULTATION_MESSAGE)}`;
+    window.open(url, "_blank", "noopener,noreferrer") ?? (window.location.href = url);
+  }
+
+  if (choice === "pt") {
+    return (
+      <section className="space-y-5">
+        <button type="button" onClick={() => setChoice(null)} className="inline-flex min-h-11 items-center rounded-2xl border border-amber-300/25 px-4 text-sm font-semibold text-amber-100">
+          Change Diet / PT option
+        </button>
+
+        <div className="overflow-hidden rounded-3xl border border-amber-300/45 bg-[linear-gradient(145deg,rgba(68,45,9,.96),rgba(13,12,10,.98)_48%,rgba(105,76,18,.92))] p-5 shadow-2xl shadow-amber-500/10 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/35 bg-amber-300/12 px-3 py-1 text-xs font-black uppercase tracking-widest text-amber-200">
+                <Sparkles size={14} />
+                Premium
+              </span>
+              <h2 className="mt-4 text-2xl font-black text-amber-50 sm:text-3xl">Get Personal Training Consultation</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-amber-50/72">
+                Start with a trainer-led consultation built around your body, goals, routine, and diet support.
+              </p>
+            </div>
+            <span className="rounded-2xl bg-amber-300 p-3 text-[#1b1304] shadow-lg shadow-amber-300/20">
+              <Dumbbell size={28} />
+            </span>
+          </div>
+
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            {personalTrainingServices.map(({ title, icon: Icon }) => (
+              <div key={title} className="flex min-h-16 items-center gap-3 rounded-2xl border border-amber-200/18 bg-black/22 px-4 text-amber-50">
+                <span className="rounded-xl bg-amber-300/16 p-2 text-amber-200">
+                  <Icon size={19} />
+                </span>
+                <span className="font-bold">{title}</span>
+              </div>
+            ))}
+          </div>
+
+          <button type="button" onClick={openPtConsultation} className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-300 px-5 font-black text-[#1b1304] shadow-lg shadow-amber-300/20 transition hover:bg-amber-200 sm:w-auto">
+            <MessageCircle size={19} />
+            Book PT Consultation on WhatsApp
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   if (choice !== "free") {
     return (
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-3">
         <button type="button" onClick={() => setChoice("free")} className="group min-h-64 rounded-3xl border border-zenith-400/30 bg-zenith-500/10 p-6 text-left transition hover:border-zenith-300 hover:bg-zenith-500/15">
           <span className="inline-flex rounded-2xl bg-zenith-500/20 p-3 text-zenith-300">
             <Apple size={26} />
@@ -163,6 +222,17 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
               WhatsApp
             </span>
           </div>
+        </button>
+
+        <button type="button" onClick={() => setChoice("pt")} className="group min-h-64 rounded-3xl border border-amber-300/45 bg-[linear-gradient(145deg,rgba(94,65,12,.9),rgba(20,17,12,.98)_55%,rgba(149,107,24,.8))] p-6 text-left shadow-2xl shadow-amber-500/10 transition hover:border-amber-200 hover:shadow-amber-400/20">
+          <span className="inline-flex rounded-2xl bg-amber-300 p-3 text-[#1b1304]">
+            <Dumbbell size={26} />
+          </span>
+          <h2 className="mt-5 text-2xl font-black text-amber-50">Get Personal Training Consultation</h2>
+          <p className="mt-3 text-sm leading-6 text-amber-50/70">Premium trainer guidance with goal setting, diet support, and result tracking.</p>
+          <span className="mt-8 inline-flex min-h-11 items-center justify-center rounded-2xl border border-amber-200/55 px-5 font-bold text-amber-100">
+            Open PT
+          </span>
         </button>
       </section>
     );

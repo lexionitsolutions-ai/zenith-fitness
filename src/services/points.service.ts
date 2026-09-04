@@ -5,6 +5,40 @@ import { hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules"
 
 export { indiaBusinessDate };
 
+function addDays(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setUTCDate(copy.getUTCDate() + days);
+  return copy;
+}
+
+function startOfIndiaMonth(now = new Date()) {
+  const today = indiaBusinessDate(now);
+  return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+}
+
+function startOfNextMonth(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
+}
+
+export async function getCurrentDailyVisitStreak(memberId: string, now = new Date()) {
+  const today = indiaBusinessDate(now);
+  const visits = await prisma.pointTransaction.findMany({
+    where: { memberId, transactionType: "DAILY_VISIT", businessDate: { lte: today } },
+    distinct: ["businessDate"],
+    orderBy: { businessDate: "desc" },
+    select: { businessDate: true },
+    take: 370,
+  });
+  const visited = new Set(visits.map((visit) => visit.businessDate.toISOString().slice(0, 10)));
+  let cursor = today;
+  let streak = 0;
+  while (visited.has(cursor.toISOString().slice(0, 10))) {
+    streak += 1;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+}
+
 export async function awardDailyVisit(qrToken: string, staffUserId: string) {
   const member = await prisma.member.findUnique({ where: { qrToken }, include: { memberships: true } });
   if (!member || !member.qrCodeActive) throw new AppError("INVALID_QR", "Member QR code is invalid.", 404);
@@ -37,19 +71,35 @@ export async function getMemberPoints(memberId: string) {
   const member = await prisma.member.findUnique({ where: { id: memberId }, select: { qrToken: true, admissionId: true, fullName: true } });
   if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
 
+  const monthStart = startOfIndiaMonth();
+  const nextMonthStart = startOfNextMonth(monthStart);
   const transactions = await prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 });
   const targets = await prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } });
   const sums = await prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } });
-  const leaders = await prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: { _sum: { points: "desc" } }, take: 20 });
+  const rankedMembers = await prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: { _sum: { points: "desc" } } });
+  const leaders = rankedMembers.slice(0, 50);
+  const memberRankIndex = rankedMembers.findIndex((leader) => leader.memberId === memberId);
+  const currentMemberRank = memberRankIndex >= 0 ? memberRankIndex + 1 : null;
+  const monthlyLeaders = await prisma.pointTransaction.groupBy({
+    by: ["memberId"],
+    where: { transactionType: "DAILY_VISIT", businessDate: { gte: monthStart, lt: nextMonthStart } },
+    _sum: { points: true },
+    _count: { id: true },
+    orderBy: [{ _sum: { points: "desc" } }, { _count: { id: "desc" } }],
+    take: 10,
+  });
   const leaderMembers = await prisma.member.findMany({
-    where: { id: { in: leaders.map((leader) => leader.memberId) } },
+    where: { id: { in: [...new Set([...leaders.map((leader) => leader.memberId), ...monthlyLeaders.map((leader) => leader.memberId)])] } },
     select: { id: true, fullName: true, admissionId: true },
   });
   const byId = new Map(leaderMembers.map((leaderMember) => [leaderMember.id, leaderMember]));
+  const currentStreak = await getCurrentDailyVisitStreak(memberId);
 
   return {
     member,
     pointsBalance: sums._sum.points ?? 0,
+    currentMemberRank,
+    currentStreak,
     transactions: transactions.map((transaction) => ({
       ...transaction,
       businessDate: transaction.businessDate.toISOString(),
@@ -71,6 +121,18 @@ export async function getMemberPoints(memberId: string) {
         name: leaderMember.fullName.split(" ")[0],
         admissionId: `${leaderMember.admissionId.slice(0, 3)}***${leaderMember.admissionId.slice(-2)}`,
         points: leader._sum.points ?? 0,
+        isCurrentMember: leader.memberId === memberId,
+      };
+    }),
+    monthlyAchievers: monthlyLeaders.flatMap((leader, index) => {
+      const leaderMember = byId.get(leader.memberId);
+      if (!leaderMember) return [];
+      return {
+        rank: index + 1,
+        name: leaderMember.fullName.split(" ")[0],
+        admissionId: `${leaderMember.admissionId.slice(0, 3)}***${leaderMember.admissionId.slice(-2)}`,
+        points: leader._sum.points ?? 0,
+        visits: leader._count.id,
         isCurrentMember: leader.memberId === memberId,
       };
     }),
