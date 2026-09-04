@@ -15,6 +15,7 @@ type Member = {
 type ScannedMember = {
   admissionId: string;
   name: string;
+  qrToken: string;
 };
 
 export function StaffConsole() {
@@ -34,6 +35,7 @@ export function StaffConsole() {
     const response = await fetch(`/api/staff/scan?qrToken=${encodeURIComponent(qr)}`);
     const payload = await response.json();
     setScannedMember(response.ok ? payload.data : null);
+    if (response.ok) setScanToken(payload.data.qrToken);
     setMessage(response.ok ? "" : payload.error?.message);
   }, [token]);
 
@@ -93,9 +95,9 @@ export function StaffConsole() {
     <div className="mt-8 grid gap-5 md:grid-cols-2">
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="flex gap-2 font-bold"><ScanLine />Award daily visit</h2>
-        <p className="mt-2 text-sm text-white/50">Scan the member QR. Only 5 visit points can be awarded per Indian calendar day.</p>
+        <p className="mt-2 text-sm text-white/50">Scan QR, or enter mobile/admission ID. Only 5 visit points can be awarded per Indian calendar day.</p>
         <QrScanner key={scannerKey} onScan={scan} />
-        <input value={token} onChange={(event) => { setToken(event.target.value); setScanToken(""); setScannedMember(null); }} placeholder="Or enter QR token" className="mt-4 w-full rounded-xl bg-black/20 p-3" />
+        <input value={token} onChange={(event) => { setToken(event.target.value); setScanToken(""); setScannedMember(null); }} placeholder="QR token, mobile, ZF-2, or 2" className="mt-4 w-full rounded-xl bg-black/20 p-3" />
         <button onClick={() => scan()} className="mt-3 min-h-12 w-full rounded-xl bg-white/10 font-bold">Show member</button>
         {scannedMember && <div className="mt-3 rounded-2xl bg-black/20 p-4">
           <p className="text-sm text-white/50">Ready to award</p>

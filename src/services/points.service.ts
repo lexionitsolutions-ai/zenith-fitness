@@ -2,6 +2,7 @@ import { Prisma, TargetStatus } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
 import { hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
+import { normalizeAdmissionId } from "@/lib/utils/normalization";
 
 export { indiaBusinessDate };
 
@@ -65,6 +66,32 @@ export async function awardDailyVisit(qrToken: string, staffUserId: string) {
     }
     throw error;
   }
+}
+
+export async function findMemberForDailyVisit(input: string) {
+  const value = input.trim();
+  if (!value) throw new AppError("SEARCH_REQUIRED", "Enter QR token, Admission ID, or mobile number.");
+
+  const digits = value.replace(/\D/g, "");
+  const normalizedAdmissionId = normalizeAdmissionId(value);
+  const admissionId =
+    normalizedAdmissionId && /^\d+$/.test(normalizedAdmissionId)
+      ? `ZF-${normalizedAdmissionId}`
+      : normalizedAdmissionId?.replace(/^ZF-?(\d+)$/, "ZF-$1");
+  const isQrToken = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+  const member = await prisma.member.findFirst({
+    where: {
+      OR: [
+        isQrToken ? { qrToken: value } : undefined,
+        admissionId ? { admissionId } : undefined,
+        digits.length >= 10 ? { mobileNumber: { endsWith: digits.slice(-10) } } : undefined,
+      ].filter(Boolean) as { qrToken?: string; admissionId?: string; mobileNumber?: { endsWith: string } }[],
+    },
+    select: { qrToken: true, admissionId: true, fullName: true, qrCodeActive: true },
+  });
+  if (!member || !member.qrCodeActive) throw new AppError("MEMBER_NOT_FOUND", "Member not found or QR is inactive.", 404);
+  return { qrToken: member.qrToken, admissionId: member.admissionId, name: member.fullName };
 }
 
 export async function getMemberPoints(memberId: string) {
