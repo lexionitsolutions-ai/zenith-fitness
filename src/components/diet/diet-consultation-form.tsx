@@ -48,6 +48,7 @@ const personalTrainingServices = [
   { title: "Certified Trainer Guidance", icon: ShieldCheck },
   { title: "Result Tracking", icon: TrendingUp },
 ];
+const paidDietFacilities = ["1 on 1 Nutritionist Consultation", "Personalized Diet Plan", "Doubt Clearing Support"];
 
 function SelectField({ label, name, required, options, defaultValue = "" }: { label: string; name: string; required?: boolean; options: string[]; defaultValue?: string }) {
   return (
@@ -189,7 +190,7 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
 
           <button type="button" onClick={openPtConsultation} className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-300 px-5 font-black text-[#1b1304] shadow-lg shadow-amber-300/20 transition hover:bg-amber-200 sm:w-auto">
             <MessageCircle size={19} />
-            Book PT Consultation on WhatsApp
+            Send WhatsApp message to schedule PT Consultation
           </button>
         </div>
       </section>
@@ -199,31 +200,6 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
   if (choice !== "free") {
     return (
       <section className="grid gap-4 md:grid-cols-3">
-        <button type="button" onClick={() => setChoice("free")} className="group min-h-64 rounded-3xl border border-zenith-400/30 bg-zenith-500/10 p-6 text-left transition hover:border-zenith-300 hover:bg-zenith-500/15">
-          <span className="inline-flex rounded-2xl bg-zenith-500/20 p-3 text-zenith-300">
-            <Apple size={26} />
-          </span>
-          <h2 className="mt-5 text-2xl font-black">Free Diet Plan</h2>
-          <p className="mt-3 text-sm leading-6 text-white/62">Includes only diet plan.</p>
-          <span className="mt-8 inline-flex min-h-11 items-center justify-center rounded-2xl bg-zenith-500 px-5 font-bold text-[#07110e]">
-            Open Form
-          </span>
-        </button>
-
-        <button type="button" onClick={openPaidConsultation} className="group min-h-64 rounded-3xl border border-white/10 bg-white/[.045] p-6 text-left transition hover:border-zenith-300/60 hover:bg-white/[.07]">
-          <span className="inline-flex rounded-2xl bg-white/10 p-3 text-zenith-300">
-            <MessageCircle size={26} />
-          </span>
-          <h2 className="mt-5 text-2xl font-black">Paid Diet Consultation</h2>
-          <p className="mt-3 text-sm leading-6 text-white/62">Includes 1 on 1 consultation with a certified nutritionist, diet plan, and doubt clearing.</p>
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <strong className="text-2xl text-zenith-300">Rs 1000</strong>
-            <span className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-zenith-400/40 px-5 font-bold text-zenith-300">
-              WhatsApp
-            </span>
-          </div>
-        </button>
-
         <button type="button" onClick={() => setChoice("pt")} className="group min-h-64 rounded-3xl border border-amber-300/45 bg-[linear-gradient(145deg,rgba(94,65,12,.9),rgba(20,17,12,.98)_55%,rgba(149,107,24,.8))] p-6 text-left shadow-2xl shadow-amber-500/10 transition hover:border-amber-200 hover:shadow-amber-400/20">
           <span className="inline-flex rounded-2xl bg-amber-300 p-3 text-[#1b1304]">
             <Dumbbell size={26} />
@@ -232,6 +208,38 @@ export function DietConsultationForm({ prefill }: { prefill: Prefill }) {
           <p className="mt-3 text-sm leading-6 text-amber-50/70">Premium trainer guidance with goal setting, diet support, and result tracking.</p>
           <span className="mt-8 inline-flex min-h-11 items-center justify-center rounded-2xl border border-amber-200/55 px-5 font-bold text-amber-100">
             Open PT
+          </span>
+        </button>
+
+        <button type="button" onClick={openPaidConsultation} className="group flex min-h-64 flex-col rounded-3xl border border-zenith-400/25 bg-zenith-500/[.08] p-6 text-left transition hover:border-zenith-300/70 hover:bg-zenith-500/[.12]">
+          <span className="inline-flex rounded-2xl bg-zenith-500/20 p-3 text-zenith-300">
+            <MessageCircle size={26} />
+          </span>
+          <h2 className="mt-5 text-2xl font-black">Paid Diet Consultation</h2>
+          <ul className="mt-4 space-y-2">
+            {paidDietFacilities.map((facility) => (
+              <li key={facility} className="flex items-start gap-2 text-sm leading-5 text-white/68">
+                <ShieldCheck className="mt-0.5 shrink-0 text-zenith-300" size={16} />
+                <span>{facility}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-auto pt-6">
+            <strong className="block text-3xl font-black leading-tight text-zenith-300">Rs 1000</strong>
+            <span className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-zenith-400/40 px-4 text-center text-sm font-bold leading-5 text-zenith-300 transition group-hover:bg-zenith-500/10">
+              Send WhatsApp message to schedule a consultation
+            </span>
+          </div>
+        </button>
+
+        <button type="button" onClick={() => setChoice("free")} className="group min-h-64 rounded-3xl border border-zenith-400/30 bg-zenith-500/10 p-6 text-left transition hover:border-zenith-300 hover:bg-zenith-500/15">
+          <span className="inline-flex rounded-2xl bg-zenith-500/20 p-3 text-zenith-300">
+            <Apple size={26} />
+          </span>
+          <h2 className="mt-5 text-2xl font-black">Free Diet Plan</h2>
+          <p className="mt-3 text-sm leading-6 text-white/62">Includes only diet plan.</p>
+          <span className="mt-8 inline-flex min-h-11 items-center justify-center rounded-2xl bg-zenith-500 px-5 font-bold text-[#07110e]">
+            Open Form
           </span>
         </button>
       </section>
