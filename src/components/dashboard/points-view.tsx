@@ -9,6 +9,7 @@ type Data = Awaited<ReturnType<typeof import("@/services/points.service").getMem
 
 export function PointsView({ data }: { data: Data }) {
   const streakAward = getStreakAward(data.currentStreak);
+  const streakEmoji = data.streakExpiresSoon ? "⏳" : streakAward.emoji;
 
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-4 py-6">
@@ -33,7 +34,7 @@ export function PointsView({ data }: { data: Data }) {
         <article className="rounded-3xl border border-amber-300/25 bg-amber-300/[.07] p-6">
           <h2 className="flex items-center gap-2 font-bold"><Flame className="text-amber-300" /> Daily streak</h2>
           <p className="mt-5 text-4xl font-black">{data.currentStreak}</p>
-          <p className="mt-1 text-lg font-black text-amber-100">{streakAward.emoji} {streakAward.label}</p>
+          <p className="mt-1 text-lg font-black text-amber-100">{streakEmoji} {streakAward.label}</p>
           <p className="mt-2 text-sm text-white/55">day{data.currentStreak === 1 ? "" : "s"} in a row</p>
         </article>
         <article className="rounded-3xl border border-white/10 bg-white/5 p-6">

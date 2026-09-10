@@ -12,6 +12,9 @@ function addDays(date: Date, days: number) {
   return copy;
 }
 
+const STREAK_GRACE_WINDOW_MS = 42 * 60 * 60 * 1000;
+const STREAK_EXPIRING_SOON_MS = 4 * 60 * 60 * 1000;
+
 function startOfIndiaMonth(now = new Date()) {
   const today = indiaBusinessDate(now);
   return new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
@@ -21,23 +24,52 @@ function startOfNextMonth(date: Date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
 }
 
-export async function getCurrentDailyVisitStreak(memberId: string, now = new Date()) {
-  const today = indiaBusinessDate(now);
-  const visits = await prisma.pointTransaction.findMany({
-    where: { memberId, transactionType: "DAILY_VISIT", businessDate: { lte: today } },
-    distinct: ["businessDate"],
-    orderBy: { businessDate: "desc" },
-    select: { businessDate: true },
-    take: 370,
-  });
+export type DailyVisitStreakStatus = {
+  currentStreak: number;
+  streakExpiresAt: string | null;
+  streakExpiresSoon: boolean;
+};
+
+export function calculateDailyVisitStreakStatus(
+  visits: { businessDate: Date; createdAt: Date }[],
+  now = new Date()
+): DailyVisitStreakStatus {
+  const latestVisit = visits[0];
+  if (!latestVisit) return { currentStreak: 0, streakExpiresAt: null, streakExpiresSoon: false };
+
+  const expiresAt = new Date(latestVisit.createdAt.getTime() + STREAK_GRACE_WINDOW_MS);
+  if (now > expiresAt) return { currentStreak: 0, streakExpiresAt: expiresAt.toISOString(), streakExpiresSoon: false };
+
   const visited = new Set(visits.map((visit) => visit.businessDate.toISOString().slice(0, 10)));
-  let cursor = today;
+  let cursor = latestVisit.businessDate;
   let streak = 0;
   while (visited.has(cursor.toISOString().slice(0, 10))) {
     streak += 1;
     cursor = addDays(cursor, -1);
   }
-  return streak;
+
+  const remainingMs = expiresAt.getTime() - now.getTime();
+  return {
+    currentStreak: streak,
+    streakExpiresAt: expiresAt.toISOString(),
+    streakExpiresSoon: remainingMs <= STREAK_EXPIRING_SOON_MS,
+  };
+}
+
+export async function getDailyVisitStreakStatus(memberId: string, now = new Date()) {
+  const today = indiaBusinessDate(now);
+  const visits = await prisma.pointTransaction.findMany({
+    where: { memberId, transactionType: "DAILY_VISIT", businessDate: { lte: today } },
+    distinct: ["businessDate"],
+    orderBy: [{ businessDate: "desc" }, { createdAt: "desc" }],
+    select: { businessDate: true, createdAt: true },
+    take: 370,
+  });
+  return calculateDailyVisitStreakStatus(visits, now);
+}
+
+export async function getCurrentDailyVisitStreak(memberId: string, now = new Date()) {
+  return (await getDailyVisitStreakStatus(memberId, now)).currentStreak;
 }
 
 export async function awardDailyVisit(qrToken: string, staffUserId: string) {
@@ -120,13 +152,15 @@ export async function getMemberPoints(memberId: string) {
     select: { id: true, fullName: true, admissionId: true },
   });
   const byId = new Map(leaderMembers.map((leaderMember) => [leaderMember.id, leaderMember]));
-  const currentStreak = await getCurrentDailyVisitStreak(memberId);
+  const streakStatus = await getDailyVisitStreakStatus(memberId);
 
   return {
     member,
     pointsBalance: sums._sum.points ?? 0,
     currentMemberRank,
-    currentStreak,
+    currentStreak: streakStatus.currentStreak,
+    streakExpiresAt: streakStatus.streakExpiresAt,
+    streakExpiresSoon: streakStatus.streakExpiresSoon,
     transactions: transactions.map((transaction) => ({
       ...transaction,
       businessDate: transaction.businessDate.toISOString(),

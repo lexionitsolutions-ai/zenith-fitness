@@ -68,6 +68,7 @@ export function Dashboard({ data }: { data: Data }) {
   const membership = data.membership;
   const payment = data.payment;
   const streakAward = getStreakAward(data.currentStreak);
+  const streakEmoji = data.streakExpiresSoon ? "⏳" : streakAward.emoji;
 
   useEffect(() => {
     const target = data.fitnessTarget.target;
@@ -128,7 +129,7 @@ export function Dashboard({ data }: { data: Data }) {
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-amber-200">Daily Streak</p>
               <h2 className="mt-2 text-3xl font-black">{data.currentStreak} day{data.currentStreak === 1 ? "" : "s"}</h2>
-              <p className="mt-1 text-lg font-black text-amber-100">{streakAward.emoji} {streakAward.label}</p>
+              <p className="mt-1 text-lg font-black text-amber-100">{streakEmoji} {streakAward.label}</p>
               <p className="mt-2 text-sm text-white/58">Scan daily to keep your streak alive.</p>
             </div>
             <span className="rounded-2xl bg-amber-300/15 p-3 text-amber-200"><Flame /></span>
