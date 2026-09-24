@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, CreditCard, Dumbbell, Flame, TrendingDown, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowRight, Dumbbell, Flame, IndianRupee, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
@@ -146,28 +146,16 @@ export function Dashboard({ data }: { data: Data }) {
           <article className="rounded-3xl border border-white/10 bg-white/[.04] p-6">
             <div className="flex items-center gap-3">
               <span className="rounded-xl bg-white/10 p-2">
-                <CreditCard />
+                <IndianRupee />
               </span>
               <div>
-                <p className="text-xs text-white/50">PAYMENT</p>
-                <h2 className="font-bold">{payment.paymentStatus}</h2>
+                <p className="text-xs text-white/50">PENDING AMOUNT</p>
+                <h2 className="font-bold">{money(payment.pendingAmount)}</h2>
               </div>
             </div>
-            <div className="mt-7 grid grid-cols-3 gap-2">
-              <div>
-                <p className="text-xs text-white/45">Total</p>
-                <b>{money(payment.finalAmount)}</b>
-              </div>
-              <div>
-                <p className="text-xs text-white/45">Paid</p>
-                <b>{money(payment.amountPaid)}</b>
-              </div>
-              <div>
-                <p className="text-xs text-white/45">Pending</p>
-                <b className="text-amber-300">{money(payment.pendingAmount)}</b>
-              </div>
-            </div>
-            <p className="mt-6 text-sm text-white/50">Mode: {payment.paymentMode ?? "Not recorded"}</p>
+            <p className="mt-6 text-sm text-white/55">
+              This may differ by member depending on previous paid amounts.
+            </p>
           </article>
         )}
       </section>
