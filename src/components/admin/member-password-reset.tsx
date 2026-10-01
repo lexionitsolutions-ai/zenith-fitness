@@ -25,7 +25,8 @@ export function MemberPasswordReset({ initialRequests = [] }: { initialRequests?
     event.preventDefault();
     setMessage("");
     setBusy(true);
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const response = await fetch("/api/admin/member-password", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -39,7 +40,7 @@ export function MemberPasswordReset({ initialRequests = [] }: { initialRequests?
     setBusy(false);
     setMessage(response.ok ? `${result.data.message} Ask them to sign in with it and create their own new password.` : result.error?.message ?? "Unable to reset password.");
     if (response.ok) {
-      event.currentTarget.reset();
+      formElement.reset();
       if (requestId) setRequests((rows) => rows.filter((row) => row.id !== requestId));
     }
   }

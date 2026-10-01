@@ -11,6 +11,11 @@ const createStaff = z.object({
   password: z.string().min(8).max(128),
 });
 
+const updateStaff = z.object({
+  id: z.string().uuid(),
+  mobile: z.string().trim().min(10).max(20),
+});
+
 const staffSelect = {
   id: true,
   displayName: true,
@@ -74,6 +79,34 @@ export async function POST(request: Request) {
         });
 
     return Response.json({ success: true, data: staff }, { status: 201 });
+  } catch (error) {
+    return apiError(error);
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    await requireActiveRole(["ADMIN"]);
+    const value = updateStaff.parse(await request.json());
+    const mobileNumber = normalizeIndianMobile(value.mobile);
+    if (!mobileNumber) throw new AppError("INVALID_MOBILE", "Enter a valid Indian mobile number.", 400);
+
+    const staff = await prisma.user.findUnique({ where: { id: value.id }, select: { id: true, role: true } });
+    if (!staff || staff.role !== "STAFF") {
+      throw new AppError("STAFF_NOT_FOUND", "Staff member not found.", 404);
+    }
+
+    const existing = await prisma.user.findUnique({ where: { mobileNumber }, select: { id: true } });
+    if (existing && existing.id !== value.id) {
+      throw new AppError("MOBILE_IN_USE", "This mobile number already has an account.", 409);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: value.id },
+      data: { mobileNumber, failedLoginCount: 0, lockedUntil: null, isActive: true },
+      select: staffSelect,
+    });
+    return Response.json({ success: true, data: updated });
   } catch (error) {
     return apiError(error);
   }

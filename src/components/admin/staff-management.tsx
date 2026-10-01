@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LoaderCircle, Trash2, UserPlus, Users } from "lucide-react";
+import { LoaderCircle, Phone, Trash2, UserPlus, Users } from "lucide-react";
 
 type Staff = {
   id: string;
@@ -48,6 +48,22 @@ export function StaffManagement({ initial }: { initial: Staff[] }) {
     setMessage("Staff access removed. Their audit history has been preserved.");
   }
 
+  async function updateMobile(event: React.FormEvent<HTMLFormElement>, person: Staff) {
+    event.preventDefault();
+    setMessage("");
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const response = await fetch("/api/admin/staff", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: person.id, mobile: data.get("mobile") }),
+    });
+    const result = await response.json();
+    if (!response.ok) return setMessage(result.error?.message ?? "Unable to update staff mobile number.");
+    setStaff((current) => current.map((item) => item.id === person.id ? result.data : item));
+    setMessage(`${result.data.displayName ?? "Staff member"} can now sign in with ${result.data.mobileNumber}.`);
+  }
+
   return (
     <main className="mx-auto min-h-dvh max-w-4xl px-5 py-8">
       <p className="text-sm text-zenith-400">ADMIN ACCESS</p>
@@ -71,15 +87,23 @@ export function StaffManagement({ initial }: { initial: Staff[] }) {
         <div className="mt-4 space-y-3">
           {staff.length === 0 && <p className="text-white/45">No active staff accounts.</p>}
           {staff.map((person) => (
-            <article key={person.id} className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div>
+            <article key={person.id} className="grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:grid-cols-[1fr_auto]">
+              <div className="min-w-0">
                 <b>{person.displayName ?? "Unnamed staff member"}</b>
                 <p className="text-sm text-white/55">{person.mobileNumber}</p>
                 <p className="mt-1 text-xs text-white/35">{person.lastLoginAt ? `Last login ${new Date(person.lastLoginAt).toLocaleString("en-IN")}` : "Has not logged in yet"}</p>
               </div>
-              <button onClick={() => remove(person)} className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-red-500/10 px-3 text-sm text-red-200">
-                <Trash2 size={17} /> Remove
-              </button>
+              <div className="flex flex-col gap-3 sm:w-72">
+                <form onSubmit={(event) => updateMobile(event, person)} className="flex gap-2">
+                  <input name="mobile" required inputMode="tel" defaultValue={person.mobileNumber} className="min-h-11 min-w-0 flex-1 rounded-xl bg-black/20 px-3 text-sm" aria-label={`New mobile number for ${person.displayName ?? "staff member"}`} />
+                  <button className="flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-white/10 px-3 text-sm text-white" aria-label="Update mobile number">
+                    <Phone size={17} />
+                  </button>
+                </form>
+                <button onClick={() => remove(person)} className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-red-500/10 px-3 text-sm text-red-200">
+                  <Trash2 size={17} /> Remove
+                </button>
+              </div>
             </article>
           ))}
         </div>

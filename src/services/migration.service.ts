@@ -69,6 +69,14 @@ export async function runImport(adapter: MembershipSheetAdapter, initiatedBy: st
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
           SELECT DISTINCT ON (row->>'admissionId') row FROM rows WHERE NULLIF(row->>'mobileNumber','') IS NOT NULL ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
         )
+        UPDATE "User" AS user_record SET "mobileNumber" = latest.row->>'mobileNumber', "updatedAt" = CURRENT_TIMESTAMP
+        FROM "Member" AS member_record JOIN latest ON latest.row->>'admissionId' = member_record."admissionId"
+        WHERE user_record."memberId" = member_record.id AND user_record.role = 'MEMBER'::"Role" AND user_record."mobileNumber" <> latest.row->>'mobileNumber'
+          AND NOT EXISTS (SELECT 1 FROM "User" AS conflicting_user WHERE conflicting_user."mobileNumber" = latest.row->>'mobileNumber' AND conflicting_user.id <> user_record.id)`;
+      await transaction.$executeRaw`
+        WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
+          SELECT DISTINCT ON (row->>'admissionId') row FROM rows WHERE NULLIF(row->>'mobileNumber','') IS NOT NULL ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
+        )
         UPDATE "User" AS user_record SET "pinHash" = ${pinHash}, "isActive" = true, "failedLoginCount" = 0, "lockedUntil" = NULL, "updatedAt" = CURRENT_TIMESTAMP
         FROM "Member" AS member_record JOIN latest ON latest.row->>'admissionId' = member_record."admissionId"
         WHERE user_record."memberId" = member_record.id AND user_record.role = 'MEMBER'::"Role" AND user_record."mustChangePassword" = true`;

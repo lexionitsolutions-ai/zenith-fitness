@@ -3,6 +3,7 @@ import { requireActiveRole } from "@/lib/auth/authorize";
 import { prisma } from "@/lib/database/prisma";
 import { ensureOperationalTables } from "@/lib/database/ensure-operational-tables";
 import { MemberPasswordReset } from "@/components/admin/member-password-reset";
+import { MemberPhoneUpdate } from "@/components/admin/member-phone-update";
 
 export default async function MembersPage() {
   try {
@@ -23,6 +24,9 @@ export default async function MembersPage() {
     <main className="mx-auto min-h-dvh max-w-2xl px-5 py-8">
       <p className="text-sm text-zenith-400">ADMIN MEMBERS</p>
       <h1 className="text-3xl font-black">Member access</h1>
+      <div className="mt-7">
+        <MemberPhoneUpdate />
+      </div>
       <MemberPasswordReset initialRequests={JSON.parse(JSON.stringify(requests))} />
     </main>
   );
