@@ -3,6 +3,7 @@
 import { AlertTriangle, ArrowRight, Dumbbell, Flame, IndianRupee, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
 import { getStreakAward } from "@/lib/utils/streak-awards";
@@ -135,6 +136,12 @@ export function Dashboard({ data }: { data: Data }) {
             <span className="rounded-2xl bg-amber-300/15 p-3 text-amber-200"><Flame /></span>
           </div>
         </article>
+      </section>
+
+      <section className={`mt-7 rounded-3xl border p-6 ${membership?.status === "EXPIRED" || (membership?.daysRemaining != null && membership.daysRemaining <= 15) ? "border-zenith-400/40 bg-zenith-500/10" : "border-white/10 bg-white/[.04]"}`}>
+        <h2 className="text-xl font-bold">{membership?.status === "EXPIRED" ? "Ready to return?" : membership?.daysRemaining != null && membership.daysRemaining <= 15 ? "Your membership is ending soon" : "Keep your fitness journey going"}</h2>
+        <p className="mt-2 text-sm text-white/60">Renew with UPI, submit your payment reference, and track approval from the gym.</p>
+        <Link href="/renew" className="visitor-button mt-4">Renew membership with UPI<ArrowRight size={18}/></Link>
       </section>
 
       <section className="mt-7">

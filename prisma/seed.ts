@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import dataset from "../src/data/workouts/exercises.normalized.json";
 import { classifyExercise, slugifyExercise, tempStations, workoutPlans } from "../src/lib/workouts/catalog";
 import { youtubeEmbedUrl, youtubeThumbnailUrl } from "../src/lib/youtube";
+import { membershipPackages } from "../src/constants/membership-packages";
 
 try {
   for (const line of readFileSync(".env", "utf8").split(/\r?\n/)) {
@@ -45,7 +46,12 @@ async function seedMembershipAccess() {
     ["PLAN_180_DAYS", "6 Months", 180],
     ["PLAN_365_DAYS", "1 Year", 365],
   ] as const) {
-    await db.membershipPlan.upsert({ where: { planCode }, create: { planCode, planName, durationDays }, update: { planName, durationDays } });
+    await db.membershipPlan.upsert({ where: { planCode }, create: { planCode, planName, durationDays, isActive: false }, update: { planName, durationDays, isActive: false } });
+  }
+
+  for (const plan of membershipPackages) {
+    const { standardPrice, ...details } = plan;
+    await db.membershipPlan.upsert({ where: { planCode: plan.planCode }, create: { ...details, standardPrice, isActive: true }, update: details });
   }
 
   const adminPin = process.env.ADMIN_PIN;

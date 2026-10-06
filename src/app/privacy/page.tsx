@@ -10,7 +10,7 @@ const supportEmail = "support@zenithfitness.in";
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="7 August 2026">
+    <LegalPage title="Privacy Policy" updated="6 October 2026">
       <LegalSection title="Overview">
         <p>
           Zenith Fitness provides a member companion app for memberships, points, workouts, schedules, announcements, and gym staff operations. This policy explains what information we collect, how we use it, and how members can contact us.
@@ -25,6 +25,8 @@ export default function PrivacyPage() {
           <li>Points, QR scan records, targets, workout assignments, and exercise progress.</li>
           <li>Login, account, device, and security information needed to keep accounts protected.</li>
           <li>Notification device tokens if a member enables app notifications.</li>
+          <li>Visitor account names, mobile numbers and securely hashed passwords; trial enquiries with a name, contact number and requested trial date.</li>
+          <li>UPI membership order amounts, order references, transaction references supplied by visitors, and gym payment review records. We do not collect your UPI PIN.</li>
         </ul>
       </LegalSection>
 
@@ -45,6 +47,7 @@ export default function PrivacyPage() {
         <ul className="list-disc space-y-2 pl-5">
           <li>Provide member dashboard, membership, points, workout, and schedule features.</li>
           <li>Help staff and administrators manage gym operations.</li>
+          <li>Contact visitors about trial requests and verify membership payments before activation.</li>
           <li>Send important gym announcements and reminders.</li>
           <li>Maintain audit records for points and administrative actions.</li>
           <li>Improve security, prevent misuse, and support members.</li>

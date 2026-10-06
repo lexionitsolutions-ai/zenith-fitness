@@ -10,7 +10,7 @@ const supportEmail = "support@zenithfitness.in";
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms And Support" updated="7 August 2026">
+    <LegalPage title="Terms And Support" updated="6 October 2026">
       <LegalSection title="Use Of The App">
         <p>
           Zenith Fitness provides this app for members, staff, and administrators to access gym-related services such as memberships, points, workouts, schedules, announcements, and operational tools.
@@ -24,6 +24,7 @@ export default function TermsPage() {
         <p>
           Membership plans, payment status, pending amounts, renewals, and expiry dates shown in the app are provided for member convenience. If there is any mismatch, members should contact the Zenith Fitness front desk for review and correction.
         </p>
+        <p>Visitors can request a trial, create an account and purchase available memberships using UPI. Existing members can request renewal using UPI. Trial dates require confirmation from the gym. Membership start dates may be today or earlier; end dates are calculated automatically. After paying, submit the UPI transaction reference for gym review. The gym activates the selected membership period after confirming receipt and approving the request; opening a payment app or submitting a reference does not confirm receipt. Approved admissions, renewals and trial enquiries are recorded through the reception Google Sheets system. Contact the front desk for payment discrepancies or refund questions.</p>
       </LegalSection>
 
       <LegalSection title="Points And Rewards">

@@ -167,6 +167,7 @@ model Member {
   targets              MemberTarget[]
   fitnessTargets       MemberFitnessTarget[]
   bmiAssessments       BmiAssessment[]
+  orders               MembershipOrder[]
 
   @@index([mobileNumber])
 }
@@ -238,6 +239,73 @@ model MembershipPlan {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   memberships   Membership[]
+  orders        MembershipOrder[]
+}
+
+model Visitor {
+  id               String   @id @default(uuid()) @db.Uuid
+  fullName         String
+  mobileNumber     String   @unique
+  passwordHash     String
+  failedLoginCount Int      @default(0)
+  lockedUntil      DateTime?
+  memberId         String?  @unique @db.Uuid
+  createdAt        DateTime @default(now())
+  orders           MembershipOrder[]
+}
+
+model TrialEnquiry {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  contact   String
+  trialDate DateTime @db.Date
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+
+  @@index([contact, createdAt])
+  @@index([status, trialDate])
+}
+
+model MembershipOrder {
+  id           String         @id @default(uuid()) @db.Uuid
+  visitorId    String?        @db.Uuid
+  visitor      Visitor?       @relation(fields: [visitorId], references: [id])
+  memberId     String?        @db.Uuid
+  member       Member?        @relation(fields: [memberId], references: [id])
+  kind         String         @default("ADMISSION")
+  category     String?
+  startDate    DateTime?       @db.Date
+  planId       String         @db.Uuid
+  plan         MembershipPlan @relation(fields: [planId], references: [id])
+  planName     String
+  durationDays Int
+  amount       Decimal        @db.Decimal(12, 2)
+  reference    String         @unique
+  utr          String?        @unique
+  status       String         @default("PENDING")
+  membershipId String?        @unique @db.Uuid
+  reviewedById String?        @db.Uuid
+  reviewedAt   DateTime?
+  createdAt    DateTime       @default(now())
+
+  @@index([visitorId, status])
+  @@index([memberId, status])
+  @@index([status, createdAt])
+}
+
+model SheetsSyncJob {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  kind      String
+  payload   Json
+  status    String   @default("PENDING")
+  attempts  Int      @default(0)
+  lastError String?
+  result    Json?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
 }
 
 model Membership {

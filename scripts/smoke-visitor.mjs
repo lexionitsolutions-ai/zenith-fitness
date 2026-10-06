@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+
+const base = process.env.SMOKE_BASE_URL ?? "http://localhost:3010";
+const login = await fetch(`${base}/login`);
+const loginHtml = await login.text();
+assert.equal(login.status, 200);
+assert(loginHtml.includes("already a Zenith member"));
+assert(loginHtml.includes("new to Zenith Fitness"));
+const explore = await fetch(`${base}/explore`);
+const exploreHtml = await explore.text();
+assert.equal(explore.status, 200);
+assert(exploreHtml.includes("Send enquiry"));
+assert(exploreHtml.includes("gym-tour.mp4"));
+assert(!exploreHtml.includes("temporarily unavailable"));
+const json = body => ({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+const payment = await fetch(`${base}/api/payments`, json({ planId: "11111111-1111-4111-8111-111111111111" }));
+assert.equal(payment.status, 401);
+const enquiry = await fetch(`${base}/api/enquiries`, json({ name: "Test", contact: "12345", trialDate: "2020-01-01" }));
+assert.equal(enquiry.status, 400);
+const admin = await fetch(`${base}/admin/joining`, { redirect: "manual" });
+assert.equal(admin.status, 307);
+const video = await fetch(`${base}/gym/gym-tour.mp4`, { headers: { Range: "bytes=0-99" } });
+assert.equal(video.status, 206);
+console.log("HTTP smoke checks passed: login options, visitor preview, enquiry validation, payment/admin access controls, video byte-range playback.");

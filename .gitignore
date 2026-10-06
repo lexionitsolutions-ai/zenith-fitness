@@ -1,5 +1,6 @@
 node_modules
 .next
+.next-dev
 .env
 .env.local
 coverage
@@ -7,6 +8,9 @@ coverage
 .idea
 .vscode
 android/.idea
+
+.vercel
+.env*
 
 .vercel
 .env*

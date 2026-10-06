@@ -49,7 +49,7 @@ For Apps Script, configure `GOOGLE_SHEETS_API_URL`. The endpoint must return an 
 
 ## Current limitations and next step
 
-This milestone still excludes OTP, full attendance reporting, online payments, diet plans, WhatsApp automation, and renewal processing. Workout plans now support seeded plan cards, member progress, and admin assignment, with temporary station/video placeholders until final Zenith media and equipment data are supplied. The manifest provides installable structure; a service worker is intentionally omitted to avoid insecure caching until an explicit offline asset strategy is approved. The recommended next step is audited OTP account provisioning, followed by staging deployment against Supabase PostgreSQL.
+This milestone still excludes OTP, full attendance reporting, automatic payment verification, diet plans and WhatsApp automation. Visitors can explore the gym, submit a trial enquiry, create an account and buy a configured membership using UPI. Existing members can renew with UPI. Admissions and renewals require gym approval and are submitted to the reception Sheets system; enquiries are also pushed to reception. See [Visitor memberships](docs/visitor-memberships.md) and [Renewals and reception sync](docs/renewals-and-reception-sync.md) for setup, prices, date restrictions, payment review, Sheets recovery and Android integration. Workout plans support seeded plan cards, member progress, and admin assignment, with temporary station/video placeholders until final Zenith media and equipment data are supplied. The manifest provides installable structure; a service worker is intentionally omitted to avoid insecure caching until an explicit offline asset strategy is approved.
 
 ## QR points, staff, targets, and leaderboard
 

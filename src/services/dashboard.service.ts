@@ -19,7 +19,7 @@ export async function getDashboard(memberId: string, now = new Date()) {
   const days = selected?.endDate ? daysBetween(now, selected.endDate) : null;
 
   if (selected?.currentStatus === "ACTIVE" && days !== null && days <= 15) alerts.push({ type: days === 0 ? "EXPIRES_TODAY" : "RENEWAL_DUE_SOON", severity: "warning", title: days === 0 ? "Membership expires today" : "Renewal due soon", message: days === 0 ? "Renew today to stay active." : `${days} days remaining.` });
-  if (selected?.currentStatus === "EXPIRED") alerts.push({ type: "MEMBERSHIP_EXPIRED", severity: "error", title: "Membership expired", message: "Contact the front desk to renew." });
+  if (selected?.currentStatus === "EXPIRED") alerts.push({ type: "MEMBERSHIP_EXPIRED", severity: "error", title: "Membership expired", message: "Use Renew membership with UPI to submit your renewal for gym approval." });
   if (selected && Number(selected.pendingAmount) > 0) alerts.push({ type: "PAYMENT_PENDING", severity: "warning", title: "Payment pending", message: `Rs ${Number(selected.pendingAmount).toLocaleString("en-IN")} is pending.` });
   if (completion < 100) alerts.push({ type: "PROFILE_INCOMPLETE", severity: "info", title: "Complete your profile", message: "Fill the remaining safe profile details below." });
 
