@@ -19,5 +19,8 @@ export const PAYEE_NAME = "Zenith Fitness";
 export function upiPaymentUri(amount: string, reference: string) {
   if (!/^\d+\.\d{2}$/.test(amount) || Number(amount) <= 0 || !Number.isFinite(Number(amount))) throw new Error("Invalid payment amount");
   if (!/^[A-Za-z0-9]{1,40}$/.test(reference)) throw new Error("Invalid payment reference");
-  return `upi://pay?${new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, am: amount, cu: "INR", tr: reference, tn: `Zenith membership ${reference}` })}`;
+  const fields = { pa: UPI_ID, pn: PAYEE_NAME, am: amount, cu: "INR", tr: reference, tn: `Zenith membership ${reference}` };
+  // UPI handlers do not consistently decode form-style '+' spaces.
+  const query = Object.entries(fields).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&");
+  return `upi://pay?${query}`;
 }

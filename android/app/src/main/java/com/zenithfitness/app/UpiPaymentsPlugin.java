@@ -23,11 +23,15 @@ public class UpiPaymentsPlugin extends Plugin {
         if ("gpay".equals(app)) intent.setPackage("com.google.android.apps.nbu.paisa.user");
         else if ("phonepe".equals(app)) intent.setPackage("com.phonepe.app");
         else if ("paytm".equals(app)) intent.setPackage("net.one97.paytm");
-        try {
-            getActivity().startActivity("all".equals(app) ? Intent.createChooser(intent, "Pay with UPI") : intent);
-            call.resolve();
-        } catch (ActivityNotFoundException e) {
-            call.reject("Install a UPI app or choose another payment app");
-        }
+        getActivity().runOnUiThread(() -> {
+            try {
+                getActivity().startActivity("all".equals(app) ? Intent.createChooser(intent, "Pay with UPI") : intent);
+                call.resolve();
+            } catch (ActivityNotFoundException e) {
+                call.reject("The selected UPI app is not installed or cannot handle this payment link", "UPI_APP_UNAVAILABLE", e);
+            } catch (SecurityException e) {
+                call.reject("Android blocked opening the selected payment app", "UPI_LAUNCH_BLOCKED", e);
+            }
+        });
     }
 }

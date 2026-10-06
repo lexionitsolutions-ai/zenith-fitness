@@ -17,6 +17,10 @@ The visitor page includes the supplied gym tour, strength training and functiona
 
 Android Capacitor uses the registered `UpiPayments` native plugin to launch Google Pay, PhonePe, Paytm or the UPI chooser. Rebuild the Android app to include this plugin. Mobile Android browsers use intent links; iOS Google Pay uses its documented `gpay://upi/pay` scheme. Other UPI handlers depend on device support. Desktop and unsupported devices can scan the QR or copy the UPI ID. No PIN or bank account PDF is stored in the app.
 
+Older Android APKs without `UpiPayments` fall back to the generic `upi://pay` link handled by Capacitor's existing external-app bridge. Select Google Pay in the Android chooser; direct app-specific launch requires the updated APK (1.0.13). Launch failures display the native error instead of hiding it. UPI text parameters use percent-encoded spaces because some payment apps display form-encoded `+` literally.
+
+If Google Pay opens with the correct recipient and amount but reports a bank-limit rejection, payment has not succeeded. The app cannot determine or change the bank's limit. Check the failed transaction with Google Pay/the paying bank before retrying, and submit a UTR only for a successful payment of the full order amount.
+
 The supplied UPI ID alone cannot authenticate successful payment. App launch, app return and a user-submitted UTR never activate membership automatically. Automatic confirmation would require a bank/PSP merchant integration with authenticated server-side transaction verification or webhooks. This implementation uses gym review; do not treat a screenshot or app callback as proof of receipt.
 
 Order prices and durations are immutable snapshots. UTRs are unique, pending-order creation is serialized per visitor, and activation is serialized per order and visitor. Admin review identity and time are stored. The admin page shows the latest 100 enquiries and 100 open payments; the visitor sees the latest 20 orders.

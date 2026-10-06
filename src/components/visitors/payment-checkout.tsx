@@ -25,7 +25,15 @@ export function PaymentCheckout({ order, onClose }: { order: PaymentOrder; onClo
     setMessage("");
     try {
       if (Capacitor.getPlatform() === "android") {
-        await nativeUpi.open({ uri: order.upiUri, app: id });
+        if (Capacitor.isPluginAvailable("UpiPayments")) {
+          await nativeUpi.open({ uri: order.upiUri, app: id });
+        } else {
+          // Older APKs can still use Capacitor's external ACTION_VIEW handler.
+          // intent:// is a Chrome protocol and is not handled by that bridge.
+          window.location.href = order.upiUri;
+          setMessage("Choose your UPI app to pay. If no app opens, update Zenith Fitness or copy the UPI ID below. Return here after payment to submit its 12-digit transaction reference.");
+          return;
+        }
       } else if (/Android/i.test(navigator.userAgent)) {
         const app = apps.find(a => a.id === id);
         window.location.href = `intent://pay?${order.upiUri.split("?")[1]}#Intent;scheme=upi;${app ? `package=${app.package};` : ""}end`;
@@ -35,7 +43,10 @@ export function PaymentCheckout({ order, onClose }: { order: PaymentOrder; onClo
         window.location.href = order.upiUri;
       }
       setMessage("Complete the payment in your UPI app, then return here and submit its 12-digit transaction reference. If the app does not open, use the QR code or copy our UPI ID.");
-    } catch { setMessage("Unable to open that UPI app. Try All UPI apps, or scan the QR code below."); }
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Unable to open that UPI app.";
+      setMessage(`${detail} Try All UPI apps, or copy the UPI ID below and pay from your payment app.`);
+    }
   }
   async function confirm(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setMessage("");

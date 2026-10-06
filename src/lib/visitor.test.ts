@@ -18,6 +18,13 @@ describe("UPI checkout", () => {
     expect(uri.searchParams.get("cu")).toBe("INR");
     expect(uri.searchParams.get("tr")).toBe("ZFtest123");
   });
+  it("uses percent-encoded spaces for payment apps that do not decode plus signs", () => {
+    const link = upiPaymentUri("2000.00", "ZFtest123");
+    expect(link).not.toContain("+");
+    expect(link).toContain("pn=Zenith%20Fitness");
+    expect(link).toContain("tn=Zenith%20membership%20ZFtest123");
+    expect(decodeURIComponent(new URL(link).search.slice(1))).toContain("tn=Zenith membership ZFtest123");
+  });
   it("rejects zero, negative and malformed amounts or references", () => {
     for (const amount of ["0.00", "-100.00", "NaN", "100&pa=other", "1"]) expect(() => upiPaymentUri(amount, "ZF123")).toThrow();
     expect(() => upiPaymentUri("100.00", "ZF123&pa=other")).toThrow();
