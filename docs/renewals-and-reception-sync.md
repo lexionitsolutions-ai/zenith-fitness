@@ -37,6 +37,8 @@ App approval remains saved if Sheets is unavailable; admin sees the separate syn
 
 ## Deployment and verification
 
-Run `npx prisma migrate deploy` against each app database to apply `20261006140000_renewals_sheets_sync`, then rebuild/restart the app. Production and development output remain separated. A server must have outbound HTTPS access to the supplied Google Apps Script deployments.
+Vercel uses the committed `vercel.json` build command, `npm run build:vercel`, to apply pending database migrations before generating Prisma Client and building Next.js. This includes the visitor tables, package prices and renewal/Sheets sync schema. A failed migration stops the deployment instead of publishing pages that query missing tables or columns. Set `DATABASE_URL` in each Vercel environment to the database used by that deployment.
+
+For other hosts, run `npm run db:deploy` against the app database before rebuilding/restarting the app. Production and development output remain separated. A server must have outbound HTTPS access to the supplied Google Apps Script deployments.
 
 Tests cover membership ownership, blocked future dates and client expiry/amount changes, server expiry calculation, atomic approval, preserving existing member accounts, enquiry/admission/renewal payloads, row reconciliation and uncertain-write recovery. `scripts/check-reception.mjs` provides a read-only check of the deployed membership export. It does not add test members or enquiries. Real payment receipt and actual approved/enquiry sheet writes must be checked with genuine submissions.
