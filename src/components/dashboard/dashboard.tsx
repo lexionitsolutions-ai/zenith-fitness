@@ -137,10 +137,6 @@ export function Dashboard({ data }: { data: Data }) {
         </article>
       </section>
 
-      <section className="mt-6 rounded-3xl border border-zenith-400/25 bg-zenith-500/[.08] p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-zenith-400">MEMBERSHIP RENEWAL</p><h2 className="mt-2 text-xl font-bold">Keep your momentum going.</h2><p className="mt-1 text-sm text-white/55">Pay with UPI. Renew after admin approval.</p></div><button onClick={() => router.push("/renew")} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-zenith-400 px-5 font-bold text-black">Renew membership <ArrowRight size={18}/></button></div>
-      </section>
-
       <section className="mt-7">
         <FitnessTargetCard data={data.fitnessTarget} />
       </section>
