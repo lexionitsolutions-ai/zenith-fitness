@@ -11,8 +11,10 @@ describe("member renewal rules", () => {
   });
   it("includes the supplied ICICI payee, exact amount and reference in the QR", () => {
     const uri = new URL(upiUri("4699.00", "ZF-ABC123"));
-    expect(uri.searchParams.get("pa")).toBe(UPI_ID);
-    expect(uri.searchParams.get("pn")).toBe(UPI_PAYEE);
+    expect(UPI_ID).toBe("9272112745.etb@icici");
+    expect(uri.searchParams.get("pa")).toBe("9272112745.etb@icici");
+    expect(UPI_PAYEE).toBe("RAJVARDHAN HEMANT PATIL HUF");
+    expect(uri.searchParams.get("pn")).toBe("RAJVARDHAN HEMANT PATIL HUF");
     expect(uri.searchParams.get("am")).toBe("4699.00");
     expect(uri.searchParams.get("tr")).toBe("ZF-ABC123");
     expect(uri.searchParams.get("cu")).toBe("INR");

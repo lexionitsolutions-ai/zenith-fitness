@@ -1,5 +1,7 @@
 # Members-only UPI renewals
 
+The checkout displays the ICICI HUF recipient above the payment buttons. App links and the QR are rebuilt from that configuration rather than trusting a stored checkout URI. **Save QR to scan from gallery** downloads the amount-specific QR as a PNG for a UPI scanner on the same phone. Before entering a PIN, confirm the payment app shows `9272112745.etb@icici` and the intended amount.
+
 Members open **Renew membership** on the dashboard (`/renew`). Google Pay, PhonePe, Paytm, a generic UPI chooser, an amount-specific QR and a copyable UPI ID are available. Payments go to **9272112745.etb@icici**, **RAJVARDHAN HEMANT PATIL HUF**, as supplied in the ICICI QR. There are no visitor accounts or online admissions.
 
 The member submits the successful payment's 12-digit bank reference. This creates a submitted approval request, not a confirmed payment. Admin finds the pending count under **Members → UPI renewal approvals** (`/admin/renewals`). The queue refreshes every 30 seconds while visible. Admin must verify the reference and amount against the actual ICICI receipt before approving; rejection requires a reason shown to the member. A static QR cannot provide a verified bank callback. Automatic settlement confirmation would require a bank or payment provider integration. UPI app availability and merchant acceptance depend on the phone, app and bank; the QR and manual UPI ID remain available.
