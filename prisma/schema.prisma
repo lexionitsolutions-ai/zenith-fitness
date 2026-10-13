@@ -166,6 +166,7 @@ model Member {
   pointTransactions    PointTransaction[]
   targets              MemberTarget[]
   fitnessTargets       MemberFitnessTarget[]
+  renewalRequests      RenewalRequest[]
   bmiAssessments       BmiAssessment[]
 
   @@index([mobileNumber])
@@ -605,4 +606,46 @@ model MemberExerciseProgress {
   @@unique([memberWorkoutAssignmentId, workoutPlanExerciseId])
   @@index([memberWorkoutAssignmentId, completed])
   @@index([workoutPlanExerciseId])
+}
+
+model RenewalRequest {
+  id             String   @id @default(uuid()) @db.Uuid
+  memberId       String   @db.Uuid
+  member         Member   @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  reference      String   @unique
+  planCode       String
+  planName       String
+  category       String
+  durationDays   Int
+  amount         Decimal  @db.Decimal(12, 2)
+  status         String   @default("DRAFT")
+  utr            String?  @unique
+  submittedAt    DateTime?
+  reviewedById   String?  @db.Uuid
+  reviewedAt     DateTime?
+  rejectionReason String?
+  membershipId   String?  @unique @db.Uuid
+  startDate      DateTime? @db.Date
+  endDate        DateTime? @db.Date
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  sheetsJob      RenewalSheetsJob?
+
+  @@index([status, createdAt])
+  @@index([memberId, createdAt])
+}
+model RenewalSheetsJob {
+  id          String   @id @default(uuid()) @db.Uuid
+  requestId   String   @unique @db.Uuid
+  request     RenewalRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  key         String   @unique
+  kind        String   @default("RENEWAL")
+  payload     Json
+  status      String   @default("PENDING")
+  attempts    Int      @default(0)
+  lastError   String?
+  result      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([status, createdAt])
 }
