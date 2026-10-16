@@ -58,13 +58,15 @@ export async function runImport(adapter: MembershipSheetAdapter, initiatedBy: st
 
   try {
     await prisma.$transaction(async (transaction) => {
+      // Profile fields belong to the member after creation, including deliberately cleared values.
+      // Re-imports update source/contact metadata and memberships without replacing saved profiles.
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
           SELECT DISTINCT ON (row->>'admissionId') row FROM rows ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
         )
         INSERT INTO "Member" ("id", "admissionId", "fullName", "mobileNumber", "originalMobileNumber", "gender", "ageAtImport", "birthDate", "address", "medicalHistory", "sourceSheet", "sourceRow", "updatedAt")
         SELECT gen_random_uuid(), row->>'admissionId', row->>'fullName', NULLIF(row->>'mobileNumber',''), NULLIF(row->>'originalMobileNumber',''), NULLIF(row->>'gender',''), NULLIF(row->>'ageAtImport','')::int, NULLIF(row->>'birthDate','')::date, NULLIF(row->>'address',''), NULLIF(row->>'medicalHistory',''), row->>'sourceSheet', (row->>'sourceRow')::int, CURRENT_TIMESTAMP FROM latest
-        ON CONFLICT ("admissionId") DO UPDATE SET "fullName" = EXCLUDED."fullName", "mobileNumber" = COALESCE(EXCLUDED."mobileNumber", "Member"."mobileNumber"), "originalMobileNumber" = COALESCE(EXCLUDED."originalMobileNumber", "Member"."originalMobileNumber"), "gender" = COALESCE(EXCLUDED."gender", "Member"."gender"), "ageAtImport" = COALESCE(EXCLUDED."ageAtImport", "Member"."ageAtImport"), "birthDate" = COALESCE(EXCLUDED."birthDate", "Member"."birthDate"), "address" = COALESCE(EXCLUDED."address", "Member"."address"), "medicalHistory" = COALESCE(EXCLUDED."medicalHistory", "Member"."medicalHistory"), "sourceSheet" = EXCLUDED."sourceSheet", "sourceRow" = EXCLUDED."sourceRow", "updatedAt" = CURRENT_TIMESTAMP`;
+        ON CONFLICT ("admissionId") DO UPDATE SET "mobileNumber" = COALESCE(EXCLUDED."mobileNumber", "Member"."mobileNumber"), "originalMobileNumber" = COALESCE(EXCLUDED."originalMobileNumber", "Member"."originalMobileNumber"), "ageAtImport" = COALESCE(EXCLUDED."ageAtImport", "Member"."ageAtImport"), "sourceSheet" = EXCLUDED."sourceSheet", "sourceRow" = EXCLUDED."sourceRow", "updatedAt" = CURRENT_TIMESTAMP`;
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
           SELECT DISTINCT ON (row->>'admissionId') row FROM rows WHERE NULLIF(row->>'mobileNumber','') IS NOT NULL ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC

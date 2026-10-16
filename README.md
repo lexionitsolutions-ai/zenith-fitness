@@ -26,6 +26,8 @@ Choose **Import sample JSON** to import `src/data/sample-memberships.json`. It i
 
 For Apps Script, configure `GOOGLE_SHEETS_API_URL`. The endpoint must return an array matching `RawMembershipRow`; if `IMPORT_API_SECRET` is set, it is sent server-to-server as `x-import-secret`. The URL and secret never reach the browser. Use **Test Sheets endpoint** before a live import.
 
+Re-imports preserve the saved name, gender, birth date, address, and medical history of existing members, including cleared fields. These profile fields are initialized from the sheet only for new members; existing members edit them in the app. Memberships, payments, and source/contact metadata continue to sync from the sheet.
+
 ## Commands
 
 - `npm run dev` — local server
@@ -34,6 +36,8 @@ For Apps Script, configure `GOOGLE_SHEETS_API_URL`. The endpoint must return an 
 - `npm test` — unit tests
 - `npm run db:migrate -- --name init` — create/apply migration
 - `npm run db:seed` — seed plans and admin
+
+The PostgreSQL import regression test runs when `TEST_DATABASE_URL` is set. It uses isolated temporary tables and leaves application records unchanged.
 
 ## Manual test checklist
 
