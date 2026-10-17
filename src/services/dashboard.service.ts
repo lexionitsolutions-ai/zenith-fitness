@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { calculateMembershipStatus, daysBetween } from "@/lib/utils/status";
 import { AppError } from "@/lib/errors";
 import { getFitnessTarget } from "@/services/fitness-target.service";
+import { getZeeBusinessDate } from "@/lib/utils/zee";
 import { getDailyVisitStreakStatus } from "@/services/points.service";
 
 export async function getDashboard(memberId: string, now = new Date()) {
@@ -54,6 +55,7 @@ export async function getDashboard(memberId: string, now = new Date()) {
     alerts,
     dataWarnings: warnings,
     fitnessTarget,
+    streakBusinessDate: getZeeBusinessDate(now),
     currentStreak: streakStatus.currentStreak,
     streakExpiresAt: streakStatus.streakExpiresAt,
     streakExpiresSoon: streakStatus.streakExpiresSoon,

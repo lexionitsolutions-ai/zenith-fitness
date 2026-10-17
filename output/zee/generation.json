@@ -1,0 +1,148 @@
+{
+  "tool": "built-in imagegen",
+  "reference": "C:/Users/Raj/Downloads/images.jpg",
+  "assets": [
+    {
+      "day": 0,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage 0, everyday kitten: NO armor, no weapons, no clothes. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-785fcf0d-c28d-4534-80f0-32d1d57f6136.png",
+      "original": "originals/day-000.png",
+      "publicAsset": "public/zee/day-000.webp"
+    },
+    {
+      "day": 1,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 1. Outfit: Tiny training headband, bare fluffy body, no armor or weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-c1f1f744-897c-4d21-a860-41ddc2e2bc0a.png",
+      "original": "originals/day-001.png",
+      "publicAsset": "public/zee/day-001.webp"
+    },
+    {
+      "day": 3,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 3. Outfit: Tiny training headband and soft cream wrist wraps on both forepaws, bare fluffy body, no armor or weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-85022743-3032-4343-9236-8d413c186d4a.png",
+      "original": "originals/day-003.png",
+      "publicAsset": "public/zee/day-003.webp"
+    },
+    {
+      "day": 5,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 5. Outfit: Simple little emerald cloth training vest and cream wrist wraps; no metal or weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-85867ac6-4348-428c-a9ef-4480a34294a6.png",
+      "original": "originals/day-005.png",
+      "publicAsset": "public/zee/day-005.webp"
+    },
+    {
+      "day": 7,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 7. Outfit: Small emerald adventurer cape over simple training vest, wrist wraps; no metal or weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-9601667e-f990-4ba8-8612-1d9fb0aac566.png",
+      "original": "originals/day-007.png",
+      "publicAsset": "public/zee/day-007.webp"
+    },
+    {
+      "day": 10,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 10. Outfit: Brown leather belt and light leather bracers, green training vest and small cape; no metal or weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-30e4a68d-bc15-48de-8523-5128bfc299c1.png",
+      "original": "originals/day-010.png",
+      "publicAsset": "public/zee/day-010.webp"
+    },
+    {
+      "day": 15,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 15. Outfit: Fitted brown leather training armor, leather belt and bracers, small emerald cape; no metal or weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-e8141c51-30e8-4b97-b7ed-4bdb549bf808.png",
+      "original": "originals/day-015.png",
+      "publicAsset": "public/zee/day-015.webp"
+    },
+    {
+      "day": 20,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 20. Outfit: Brown leather training armor with ONE small silver metal shoulder guard, leather bracers and belt; no weapon. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-b53838ec-c2ff-44a4-a771-3e30fbecab53.png",
+      "original": "originals/day-020.png",
+      "publicAsset": "public/zee/day-020.webp"
+    },
+    {
+      "day": 25,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 25. Outfit: Brown leather training armor with TWO matching silver metal shoulder guards, leather bracers and belt; no weapon. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-4777f41e-9653-4cd1-b1a5-359618aaaeae.png",
+      "original": "originals/day-025.png",
+      "publicAsset": "public/zee/day-025.webp"
+    },
+    {
+      "day": 30,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 30. Outfit: Light plain silver breastplate and two small silver shoulder guards over leather training gear, emerald cape; bare paws, no weapon. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-7c785bd2-54ea-4f30-ac7f-0a594fca3240.png",
+      "original": "originals/day-030.png",
+      "publicAsset": "public/zee/day-030.webp"
+    },
+    {
+      "day": 35,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 35. Outfit: Light silver breastplate, paired shoulder guards, newly added silver armored gloves; leather lower gear, bare hind paws, emerald cape; no weapon. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-45019830-a242-4673-9c0a-0a31a444d094.png",
+      "original": "originals/day-035.png",
+      "publicAsset": "public/zee/day-035.webp"
+    },
+    {
+      "day": 40,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 40. Outfit: Light silver breastplate, paired shoulder guards, silver armored gloves and newly added armored boots, emerald cape; no weapons. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-139fe7ff-bd82-4714-b8b0-44c3749d3e1c.png",
+      "original": "originals/day-040.png",
+      "publicAsset": "public/zee/day-040.webp"
+    },
+    {
+      "day": 45,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 45. Outfit: Light silver armor with gloves and boots, holding a small plain silver shield with emerald center, emerald cape; no sword. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-0a4d13d2-c38e-4429-8001-4ad08f9dedbb.png",
+      "original": "originals/day-045.png",
+      "publicAsset": "public/zee/day-045.webp"
+    },
+    {
+      "day": 50,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 50. Outfit: Light silver knight armor, small silver shield and short simple ceremonial sword held upright, emerald cape. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-00000ed2-5171-4026-8149-5a67f4f6a482.png",
+      "original": "originals/day-050-v2.png",
+      "publicAsset": "public/zee/day-050.webp",
+      "previousOriginal": "originals/day-050.png",
+      "refinementPrompt": "Edit target: the supplied day-50 Zee cutout. Make ONLY this equipment correction: cover both exposed furry forepaws with silver armored gauntlet gloves while retaining their grips on sword/shield, and cover both exposed furry hind paws with little silver armored boots. Keep every other detail exactly the same: same baby kitten face, eyes, pink flower, tabby fur, body size, upright pose, existing breastplate, cape, sword, shield, lighting, and canvas framing. Maintain genuine transparent alpha background. No text or additional objects. This is the light armor day50 stage, not the final ornate legendary stage."
+    },
+    {
+      "day": 60,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 60. Outfit: Complete POLISHED SILVER knight plate armor with articulated gloves and boots, small silver shield, simple short ceremonial sword, short emerald cape; no gold ornament. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Both forepaws are armored as gloves, both hind paws covered by armored boots. Reference final legendary armor is only a style guide; honor this stage's simpler outfit. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-b8a68630-35be-42f9-bc49-7fca213a6167.png",
+      "original": "originals/day-060.png",
+      "publicAsset": "public/zee/day-060.webp"
+    },
+    {
+      "day": 70,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 70. Outfit: Polished silver knight plate armor, small shield, short ceremonial sword, newly long FLOWING emerald warrior cape; no gold ornament. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Both forepaws are armored as gloves, both hind paws covered by armored boots. Reference final legendary armor is only a style guide; honor this stage's simpler outfit. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-e40c8f46-6c80-4202-a25d-908175c13073.png",
+      "original": "originals/day-070.png",
+      "publicAsset": "public/zee/day-070.webp"
+    },
+    {
+      "day": 80,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 80. Outfit: ORNATE engraved SILVER plate armor, engraved small silver shield and silver ceremonial sword, flowing emerald cape; keep gold absent. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Both forepaws are armored as gloves, both hind paws covered by armored boots. Reference final legendary armor is only a style guide; honor this stage's simpler outfit. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-be5df8c7-10e2-4e4f-9868-f4f0b42e1189.png",
+      "original": "originals/day-080.png",
+      "publicAsset": "public/zee/day-080.webp"
+    },
+    {
+      "day": 90,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 90. Outfit: Silver champion armor with restrained GOLD trim, shield and ceremonial sword, emerald cape with thin gold hem. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Both forepaws are armored as gloves, both hind paws covered by armored boots. Reference final legendary armor is only a style guide; honor this stage's simpler outfit. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-62995898-027b-4382-b235-be0d72bde235.png",
+      "original": "originals/day-090.png",
+      "publicAsset": "public/zee/day-090.webp"
+    },
+    {
+      "day": 95,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is stage day 95. Outfit: Near-complete royal warrior silver-and-gold armor with ornate shoulder guards, elegant shield and short ceremonial sword, rich emerald cape; less ornament than legendary day100. Keep the same baby proportions as the starter reference; clothing fits the kitten, never make her an adult. Both forepaws are armored as gloves, both hind paws covered by armored boots. Reference final legendary armor is only a style guide; honor this stage's simpler outfit. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-e4307e22-f2ae-458d-a976-9385f93f2d97.png",
+      "original": "originals/day-095.png",
+      "publicAsset": "public/zee/day-095.webp"
+    },
+    {
+      "day": 100,
+      "prompt": "Use case: stylized-concept. Create ONE full-body transparent PNG cutout of Zee, the exact baby tabby kitten in the reference image: same round fluffy brown-gray tabby face, huge blue-gray eyes, tiny muzzle, pink flower beside her left ear (viewer right), adorable childlike kitten proportions. This is final stage 100 LEGENDARY WARRIOR: beautifully fitted complete polished silver-and-gold plate armor, ornate gold trim, tiny royal crest on breastplate, armored paws and boots, small shield and short ceremonial sword held safely upright, deep emerald flowing cape. No helmet: ears, round face and pink flower fully visible. Majestic armor but still an innocent baby kitten, not adult muscular proportions. Upright cute balanced stance, forepaws held near tummy, gentle determined expression. Premium photoreal storybook character rendering matching reference fur, soft neutral studio lighting. Entire character including hind paws and ears in frame, centered at 85% height with clear margin, square canvas. Genuine transparent alpha background, no floor, no scene, no cast shadow, no text or watermark. Preserve identity and childish cuteness; one character only.",
+      "source": "C:\\Users\\Raj\\.codex\\generated_images\\01a14480-f755-72d3-83e5-23172273842f\\exec-37ca2191-47d5-4715-a111-ee6cb2dc7599.png",
+      "original": "originals/day-100.png",
+      "publicAsset": "public/zee/day-100.webp"
+    }
+  ]
+}

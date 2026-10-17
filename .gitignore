@@ -10,3 +10,8 @@ android/.idea
 
 .vercel
 .env*
+
+# Zee's source renders and local browser verification artifacts stay in the workspace.
+/output/zee/originals/
+/output/zee/qa/
+/.zee-qa/

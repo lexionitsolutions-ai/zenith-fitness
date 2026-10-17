@@ -1,11 +1,11 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Dumbbell, Flame, IndianRupee, TrendingDown, Trophy } from "lucide-react";
+import { AlertTriangle, ArrowRight, Dumbbell, IndianRupee, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
-import { getStreakAward } from "@/lib/utils/streak-awards";
+import { ZeeStreakCard } from "@/components/dashboard/zee-streak-card";
 
 type Data = Awaited<ReturnType<typeof import("@/services/dashboard.service").getDashboard>>;
 
@@ -67,8 +67,6 @@ export function Dashboard({ data }: { data: Data }) {
   const router = useRouter();
   const membership = data.membership;
   const payment = data.payment;
-  const streakAward = getStreakAward(data.currentStreak);
-  const streakEmoji = data.streakExpiresSoon ? "⏳" : streakAward.emoji;
 
   useEffect(() => {
     const target = data.fitnessTarget.target;
@@ -124,17 +122,7 @@ export function Dashboard({ data }: { data: Data }) {
           )}
         </article>
 
-        <article className="rounded-3xl border border-amber-300/25 bg-amber-300/[.07] p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-200">Daily Streak</p>
-              <h2 className="mt-2 text-3xl font-black">{data.currentStreak} day{data.currentStreak === 1 ? "" : "s"}</h2>
-              <p className="mt-1 text-lg font-black text-amber-100">{streakEmoji} {streakAward.label}</p>
-              <p className="mt-2 text-sm text-white/58">Scan daily to keep your streak alive.</p>
-            </div>
-            <span className="rounded-2xl bg-amber-300/15 p-3 text-amber-200"><Flame /></span>
-          </div>
-        </article>
+        <ZeeStreakCard currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />
       </section>
 
       <section className="mt-7">

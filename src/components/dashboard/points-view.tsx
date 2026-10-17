@@ -1,16 +1,13 @@
 "use client";
 
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, Flame, Medal, Star, Target, Trophy } from "lucide-react";
+import { ArrowLeft, Medal, Star, Target, Trophy } from "lucide-react";
 import Link from "next/link";
-import { getStreakAward } from "@/lib/utils/streak-awards";
+import { ZeeStreakCard } from "@/components/dashboard/zee-streak-card";
 
 type Data = Awaited<ReturnType<typeof import("@/services/points.service").getMemberPoints>>;
 
 export function PointsView({ data }: { data: Data }) {
-  const streakAward = getStreakAward(data.currentStreak);
-  const streakEmoji = data.streakExpiresSoon ? "⏳" : streakAward.emoji;
-
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-4 py-6">
       <Link href="/dashboard" className="inline-flex min-h-11 items-center gap-2 text-sm text-white/60">
@@ -25,19 +22,14 @@ export function PointsView({ data }: { data: Data }) {
         <Trophy className="text-amber-300" size={40} />
       </header>
 
-      <section className="mt-7 grid gap-4 sm:grid-cols-3">
+      <section className="mt-7 grid gap-4 md:grid-cols-2">
         <article className="rounded-3xl bg-white p-6 text-center text-black">
           <QRCodeSVG value={data.member.qrToken} size={210} className="mx-auto max-w-full" />
           <p className="mt-4 font-bold">{data.member.fullName}</p>
           <p className="text-sm text-black/50">{data.member.admissionId} - Show this to staff</p>
         </article>
-        <article className="rounded-3xl border border-amber-300/25 bg-amber-300/[.07] p-6">
-          <h2 className="flex items-center gap-2 font-bold"><Flame className="text-amber-300" /> Daily streak</h2>
-          <p className="mt-5 text-4xl font-black">{data.currentStreak}</p>
-          <p className="mt-1 text-lg font-black text-amber-100">{streakEmoji} {streakAward.label}</p>
-          <p className="mt-2 text-sm text-white/55">day{data.currentStreak === 1 ? "" : "s"} in a row</p>
-        </article>
-        <article className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <ZeeStreakCard currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />
+        <article className="rounded-3xl border border-white/10 bg-white/5 p-6 md:col-span-2">
           <h2 className="flex items-center gap-2 font-bold"><Target className="text-zenith-400" /> My targets</h2>
           <div className="mt-4 space-y-3">
             {data.targets.length ? data.targets.map((target) => (

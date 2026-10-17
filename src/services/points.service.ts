@@ -2,6 +2,7 @@ import { Prisma, TargetStatus } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
 import { hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
+import { getZeeBusinessDate } from "@/lib/utils/zee";
 import { normalizeAdmissionId } from "@/lib/utils/normalization";
 
 export { indiaBusinessDate };
@@ -126,11 +127,11 @@ export async function findMemberForDailyVisit(input: string) {
   return { qrToken: member.qrToken, admissionId: member.admissionId, name: member.fullName };
 }
 
-export async function getMemberPoints(memberId: string) {
+export async function getMemberPoints(memberId: string, now = new Date()) {
   const member = await prisma.member.findUnique({ where: { id: memberId }, select: { qrToken: true, admissionId: true, fullName: true } });
   if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
 
-  const monthStart = startOfIndiaMonth();
+  const monthStart = startOfIndiaMonth(now);
   const nextMonthStart = startOfNextMonth(monthStart);
   const transactions = await prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 });
   const targets = await prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } });
@@ -152,12 +153,13 @@ export async function getMemberPoints(memberId: string) {
     select: { id: true, fullName: true, admissionId: true },
   });
   const byId = new Map(leaderMembers.map((leaderMember) => [leaderMember.id, leaderMember]));
-  const streakStatus = await getDailyVisitStreakStatus(memberId);
+  const streakStatus = await getDailyVisitStreakStatus(memberId, now);
 
   return {
     member,
     pointsBalance: sums._sum.points ?? 0,
     currentMemberRank,
+    streakBusinessDate: getZeeBusinessDate(now),
     currentStreak: streakStatus.currentStreak,
     streakExpiresAt: streakStatus.streakExpiresAt,
     streakExpiresSoon: streakStatus.streakExpiresSoon,
