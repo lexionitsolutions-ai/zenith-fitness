@@ -55,10 +55,11 @@ function FitnessTargetCard({ data }: { data: Data["fitnessTarget"] }) {
       </div>
       <div className="mt-5 h-3 overflow-hidden rounded-full bg-black/30"><div className="h-full rounded-full bg-zenith-400" style={{ width: `${pct}%` }} /></div>
       <p className="mt-2 text-sm font-bold">{pct} / 100 Reached</p>
-      <p className={`mt-3 text-sm ${target.bmiDue ? "font-bold text-amber-200" : "text-white/55"}`}>{target.bmiDue ? "BMI Check Due" : `Next BMI Check: ${date(target.nextBmiDate)}`}</p>
-      <button onClick={() => location.assign(target.bmiDue ? "/set-target?mode=update" : completed ? "/set-target" : "/my-progress")} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-white px-5 font-bold text-black">
-        {target.bmiDue ? "Update BMI" : completed ? "Set New Target" : "View Progress"} <ArrowRight size={18} />
+      <p className={`mt-3 text-sm ${target.bmiDue ? "font-bold text-amber-200" : "text-white/55"}`}>{completed ? "Target reached! Your BMI history is saved." : target.bmiDue ? "BMI Check Due" : `Next BMI Check: ${date(target.nextBmiDate)}`}</p>
+      <button onClick={() => location.assign(target.bmiDue ? "/set-target?mode=update" : "/my-progress")} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-white px-5 font-bold text-black">
+        {target.bmiDue ? "Update BMI" : "View Progress"} <ArrowRight size={18} />
       </button>
+      {completed && <button onClick={() => location.assign("/set-target?mode=new")} className="ml-3 mt-3 inline-flex min-h-11 items-center rounded-2xl bg-white/10 px-5 font-bold">Set New Target</button>}
     </article>
   );
 }

@@ -16,7 +16,7 @@ const label = (goal: GoalType) => (goal === "WEIGHT_LOSS" ? "Weight Loss" : "Mus
 export function SetTargetClient({ initialData }: { initialData: Snapshot }) {
   const router = useRouter();
   const search = useSearchParams();
-  const updateMode = search.get("mode") === "update";
+  const updateMode = !!initialData.target && search.get("mode") !== "new";
   const [hasReport, setHasReport] = useState<null | boolean>(updateMode ? true : null);
   const [bmi, setBmi] = useState(emptyBmi);
   const [goalType, setGoalType] = useState<GoalType>("WEIGHT_LOSS");
@@ -58,7 +58,7 @@ export function SetTargetClient({ initialData }: { initialData: Snapshot }) {
         <section className="mt-8 rounded-3xl border border-zenith-400/30 bg-zenith-500/[.10] p-6 text-center">
           <CheckCircle2 className="mx-auto text-zenith-300" size={52} />
           <h1 className="mt-4 text-3xl font-black">{updateMode ? "BMI Updated!" : "Target Set!"}</h1>
-          <p className="mt-2 text-white/60">Great start! Your fitness journey is now being tracked.</p>
+          <p className="mt-2 text-white/60">{updateMode ? "Your BMI report has been added to your existing progress history." : "Great start! Your fitness journey is now being tracked."}</p>
           {success.rewardAwarded && <p className="mt-5 text-lg font-black text-amber-200">+50 Points Earned</p>}
           <p className="mt-4 text-sm text-white/55">Next BMI Check: <b className="text-white">{new Date(`${success.target.nextBmiDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</b></p>
           <Link href="/my-progress" className="mt-7 inline-flex min-h-12 items-center rounded-2xl bg-white px-6 font-bold text-black">View My Progress</Link>

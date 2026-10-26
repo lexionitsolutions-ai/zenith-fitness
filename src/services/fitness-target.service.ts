@@ -68,7 +68,7 @@ function serialize(target: Awaited<ReturnType<typeof findActiveTarget>>, rewardC
       ? calculateWeightLossProgress(Number(target.baselineWeightKg), Number(latest.weightKg), Number(target.targetWeightKg))
       : calculateMuscleGainProgress(Number(target.baselineMuscleMassKg), Number(latest.skeletalMuscleMassKg), Number(target.targetMuscleMassKg));
   const nextBmiDate = calculateNextBmiDate(latest.assessmentDate);
-  const bmiDue = nextBmiDate <= new Date();
+  const bmiDue = target.status === "ACTIVE" && !progress.reached && nextBmiDate <= new Date();
   return {
     target: {
       id: target.id,
@@ -151,7 +151,14 @@ async function hasInitialTargetReward(memberId: string) {
 }
 
 export async function getFitnessTarget(memberId: string) {
-  return serialize(await findActiveTarget(memberId), await hasInitialTargetReward(memberId));
+  // Completion must not hide the report that reached the goal or its BMI history.
+  // Prefer an active goal, falling back to the most recently completed goal.
+  const target = await findActiveTarget(memberId) ?? await prisma.memberFitnessTarget.findFirst({
+    where: { memberId, status: "COMPLETED" },
+    orderBy: { createdAt: "desc" },
+    include: { baselineBmiAssessment: true, bmiAssessments: { orderBy: [{ assessmentDate: "desc" }, { createdAt: "desc" }] } },
+  });
+  return serialize(target, await hasInitialTargetReward(memberId));
 }
 
 export async function getFitnessTargetOrEmpty(memberId: string) {

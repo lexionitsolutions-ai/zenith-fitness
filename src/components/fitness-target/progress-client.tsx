@@ -28,6 +28,7 @@ export function ProgressClient({ data }: { data: Snapshot }) {
     return <main className="mx-auto min-h-dvh max-w-3xl px-4 py-6"><Back /><section className="mt-8 rounded-3xl border border-white/10 bg-white/[.04] p-6"><h1 className="text-3xl font-black">My Progress</h1><p className="mt-2 text-white/55">Set Target to start tracking your BMI history.</p><Link href="/set-target" className="mt-6 inline-flex min-h-11 items-center rounded-2xl bg-zenith-400 px-5 font-bold text-black">Set Target</Link></section></main>;
   }
   const isWeight = target.goalType === "WEIGHT_LOSS";
+  const completed = target.status === "COMPLETED";
   const pct = Math.round(target.progress.visualPercentage);
   const change = {
     weightKg: target.latest.weightKg - target.baseline.weightKg,
@@ -62,14 +63,15 @@ export function ProgressClient({ data }: { data: Snapshot }) {
           <Stat label={isWeight ? "Starting Weight" : "Starting Muscle"} value={`${fmt(isWeight ? target.baseline.weightKg : target.baseline.skeletalMuscleMassKg)} kg`} />
           <Stat label={isWeight ? "Current Weight" : "Current Muscle"} value={`${fmt(isWeight ? target.latest.weightKg : target.latest.skeletalMuscleMassKg)} kg`} />
           <Stat label={isWeight ? "Target Weight" : "Target Muscle Mass"} value={`${fmt(isWeight ? target.targetWeightKg! : target.targetMuscleMassKg!)} kg`} />
-          <Stat label="Next BMI Check" value={target.bmiDue ? "BMI Check Due" : date(target.nextBmiDate)} />
+          <Stat label="Next BMI Check" value={completed ? "Target reached" : target.bmiDue ? "BMI Check Due" : date(target.nextBmiDate)} />
           <Stat label="Target Start" value={date(target.startDate)} />
           <Stat label="Target End" value={date(target.targetEndDate)} />
         </div>
         <div className="mt-6 h-3 overflow-hidden rounded-full bg-black/30"><div className="h-full rounded-full bg-zenith-400" style={{ width: `${pct}%` }} /></div>
         <p className="mt-2 font-black">{pct} / 100 Reached</p>
         <p className="text-sm text-white/55">{fmt(target.progress.progressAmount)} / {fmt(target.progress.totalRequired)} kg {isWeight ? "Progress" : "Muscle Gained"}</p>
-        <button onClick={() => setEditingTarget(true)} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold"><Pencil size={16} /> Edit Target</button>
+        {!completed && <button onClick={() => setEditingTarget(true)} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold"><Pencil size={16} /> Edit Target</button>}
+        <Link href={completed ? "/set-target?mode=new" : "/set-target?mode=update"} className="mt-5 inline-flex min-h-10 items-center rounded-xl bg-zenith-400 px-4 text-sm font-bold text-black">{completed ? "Set New Target" : "Add BMI Report"}</Link>
         {editingTarget && (
           <form
             onSubmit={(event) => {
