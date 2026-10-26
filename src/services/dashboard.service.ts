@@ -14,7 +14,8 @@ export async function getDashboard(memberId: string, now = new Date()) {
   const active = all.filter((membership) => membership.currentStatus === "ACTIVE").sort((a, b) => (b.endDate?.valueOf() ?? 0) - (a.endDate?.valueOf() ?? 0));
   const selected = active[0] ?? all.filter((membership) => membership.currentStatus === "UPCOMING").sort((a, b) => (a.startDate?.valueOf() ?? 0) - (b.startDate?.valueOf() ?? 0))[0] ?? all.filter((membership) => membership.currentStatus === "EXPIRED").sort((a, b) => (b.endDate?.valueOf() ?? 0) - (a.endDate?.valueOf() ?? 0))[0] ?? null;
   const warnings = active.length > 1 ? ["Multiple active memberships found. Please contact staff."] : [];
-  const editableFields = [member.gender, member.birthDate, member.address, member.medicalHistory];
+  // Medical history is optional and does not affect profile completion.
+  const editableFields = [member.gender, member.birthDate, member.address];
   const completion = Math.round((editableFields.filter(Boolean).length / editableFields.length) * 100);
   const alerts: { type: string; severity: string; title: string; message: string }[] = [];
   const days = selected?.endDate ? daysBetween(now, selected.endDate) : null;

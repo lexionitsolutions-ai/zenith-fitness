@@ -16,6 +16,13 @@ beforeEach(() => {
 });
 
 describe("profile saves", () => {
+  it("saves the other member details when medical history is empty", async () => {
+    expect((await POST(request({ fullName: "Updated Name", gender: "Female", birthDate: "1990-01-01", address: "Saved address", medicalHistory: "" }))).status).toBe(200);
+    expect(prisma.member.update).toHaveBeenCalledWith({ where: { id: "member" }, data: {
+      fullName: "Updated Name", gender: "Female", birthDate: new Date("1990-01-01T00:00:00Z"), address: "Saved address", medicalHistory: null,
+    } });
+  });
+
   it("updates only supplied fields when saving part of a profile", async () => {
     expect((await POST(request({ fullName: "Updated Name" }))).status).toBe(200);
     expect(prisma.member.update).toHaveBeenCalledWith({ where: { id: "member" }, data: {
