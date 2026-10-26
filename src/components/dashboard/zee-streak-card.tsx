@@ -1,13 +1,15 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Flame, LockKeyhole, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, Instagram, LockKeyhole, Sparkles, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { getStreakAward } from "@/lib/utils/streak-awards";
+import { StreakStoryDialog } from "@/components/dashboard/streak-story-dialog";
 import { getNextIndiaMidnight, getZeeBusinessDate, getZeeLine, getZeeProgress, zeeStages, type ZeeStage } from "@/lib/utils/zee";
 
 export type ZeeStreakProps = {
+  memberName: string;
   currentStreak: number;
   streakExpiresAt: string | null;
   streakExpiresSoon: boolean;
@@ -102,6 +104,7 @@ export function ZeeStreakCard(props: ZeeStreakProps) {
   const [businessDate, setBusinessDate] = useState(props.streakBusinessDate);
   const [clock, setClock] = useState<number | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
   const opener = useRef<HTMLButtonElement | null>(null);
   const expiresAt = props.streakExpiresAt ? Date.parse(props.streakExpiresAt) : null;
   const expired = clock !== null && expiresAt !== null && clock > expiresAt;
@@ -158,6 +161,12 @@ export function ZeeStreakCard(props: ZeeStreakProps) {
       <p className="text-xs leading-relaxed text-white/55">{progress.next ? <><b className="text-amber-100">{progress.remaining} more day{progress.remaining === 1 ? "" : "s"}</b> to Zee’s next look</> : <><b className="text-amber-100">Legendary Zee unlocked.</b> Keep showing up!</>}</p>
       <button type="button" onClick={event => openGallery(event.currentTarget)} className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-amber-200">Zee’s evolution <ChevronRight size={15} /></button>
     </div>
+    <button type="button" onClick={event => { opener.current = event.currentTarget; setStoryOpen(true); }}
+      className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-pink-300/25 bg-gradient-to-r from-fuchsia-500/15 via-pink-500/15 to-orange-400/15 px-4 py-3 text-sm font-bold text-pink-100 transition-colors hover:border-pink-300/50 hover:bg-pink-400/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-300">
+      <Instagram size={18} className="shrink-0 text-pink-300" /> Flex your streak on Instagram
+    </button>
     {galleryOpen && <ZeeGallery streak={progress.days} onClose={closeGallery} />}
+    {storyOpen && <StreakStoryDialog name={props.memberName} streak={progress.days} businessDate={businessDate}
+      onClose={() => { setStoryOpen(false); requestAnimationFrame(() => opener.current?.focus()); }} />}
   </article>;
 }

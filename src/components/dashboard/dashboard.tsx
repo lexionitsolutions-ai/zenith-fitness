@@ -123,7 +123,7 @@ export function Dashboard({ data }: { data: Data }) {
           )}
         </article>
 
-        <ZeeStreakCard currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />
+        <ZeeStreakCard memberName={data.member.name} currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />
       </section>
 
       <section className="mt-7">

@@ -28,7 +28,7 @@ export function PointsView({ data }: { data: Data }) {
           <p className="mt-4 font-bold">{data.member.fullName}</p>
           <p className="text-sm text-black/50">{data.member.admissionId} - Show this to staff</p>
         </article>
-        <ZeeStreakCard currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />
+        <ZeeStreakCard memberName={data.member.fullName} currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />
         <article className="rounded-3xl border border-white/10 bg-white/5 p-6 md:col-span-2">
           <h2 className="flex items-center gap-2 font-bold"><Target className="text-zenith-400" /> My targets</h2>
           <div className="mt-4 space-y-3">
