@@ -49,7 +49,7 @@ export function ProfileEditor({ profile, complete }: { profile: Profile; complet
         <input name="birthDate" type="date" defaultValue={profile.birthDate ?? ""} className="min-h-12 rounded-xl bg-black/20 p-3" />
       </div>
       <textarea name="address" defaultValue={profile.address ?? ""} placeholder="Address" className="min-h-24 w-full rounded-xl bg-black/20 p-3" />
-      <textarea name="medicalHistory" defaultValue={profile.medicalHistory ?? ""} placeholder="Medical history or notes" className="min-h-24 w-full rounded-xl bg-black/20 p-3" />
+      <textarea name="medicalHistory" defaultValue={profile.medicalHistory ?? ""} placeholder="Medical history or notes (optional)" className="min-h-24 w-full rounded-xl bg-black/20 p-3" />
       <button disabled={busy} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-zenith-500 px-5 font-bold text-slate-950 disabled:opacity-60">
         {busy ? <LoaderCircle className="animate-spin" /> : <><Save size={18} />Save profile</>}
       </button>

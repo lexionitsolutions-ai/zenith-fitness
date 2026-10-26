@@ -59,36 +59,37 @@ export async function runImport(adapter: MembershipSheetAdapter, initiatedBy: st
   try {
     await prisma.$transaction(async (transaction) => {
       // Profile fields belong to the member after creation, including deliberately cleared values.
-      // Re-imports update source/contact metadata and memberships without replacing saved profiles.
+      // Saved phone numbers are authoritative too: imports only fill missing contacts.
+      // Login accounts must use the persisted member number, not a stale sheet value.
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
           SELECT DISTINCT ON (row->>'admissionId') row FROM rows ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
         )
         INSERT INTO "Member" ("id", "admissionId", "fullName", "mobileNumber", "originalMobileNumber", "gender", "ageAtImport", "birthDate", "address", "medicalHistory", "sourceSheet", "sourceRow", "updatedAt")
         SELECT gen_random_uuid(), row->>'admissionId', row->>'fullName', NULLIF(row->>'mobileNumber',''), NULLIF(row->>'originalMobileNumber',''), NULLIF(row->>'gender',''), NULLIF(row->>'ageAtImport','')::int, NULLIF(row->>'birthDate','')::date, NULLIF(row->>'address',''), NULLIF(row->>'medicalHistory',''), row->>'sourceSheet', (row->>'sourceRow')::int, CURRENT_TIMESTAMP FROM latest
-        ON CONFLICT ("admissionId") DO UPDATE SET "mobileNumber" = COALESCE(EXCLUDED."mobileNumber", "Member"."mobileNumber"), "originalMobileNumber" = COALESCE(EXCLUDED."originalMobileNumber", "Member"."originalMobileNumber"), "ageAtImport" = COALESCE(EXCLUDED."ageAtImport", "Member"."ageAtImport"), "sourceSheet" = EXCLUDED."sourceSheet", "sourceRow" = EXCLUDED."sourceRow", "updatedAt" = CURRENT_TIMESTAMP`;
+        ON CONFLICT ("admissionId") DO UPDATE SET "mobileNumber" = COALESCE("Member"."mobileNumber", EXCLUDED."mobileNumber"), "originalMobileNumber" = CASE WHEN "Member"."mobileNumber" IS NULL THEN EXCLUDED."originalMobileNumber" ELSE "Member"."originalMobileNumber" END, "ageAtImport" = COALESCE(EXCLUDED."ageAtImport", "Member"."ageAtImport"), "sourceSheet" = EXCLUDED."sourceSheet", "sourceRow" = EXCLUDED."sourceRow", "updatedAt" = CURRENT_TIMESTAMP`;
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
-          SELECT DISTINCT ON (row->>'admissionId') row FROM rows WHERE NULLIF(row->>'mobileNumber','') IS NOT NULL ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
+          SELECT DISTINCT ON (row->>'admissionId') row FROM rows ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
         )
-        UPDATE "User" AS user_record SET "mobileNumber" = latest.row->>'mobileNumber', "updatedAt" = CURRENT_TIMESTAMP
+        UPDATE "User" AS user_record SET "mobileNumber" = member_record."mobileNumber", "updatedAt" = CURRENT_TIMESTAMP
         FROM "Member" AS member_record JOIN latest ON latest.row->>'admissionId' = member_record."admissionId"
-        WHERE user_record."memberId" = member_record.id AND user_record.role = 'MEMBER'::"Role" AND user_record."mobileNumber" <> latest.row->>'mobileNumber'
-          AND NOT EXISTS (SELECT 1 FROM "User" AS conflicting_user WHERE conflicting_user."mobileNumber" = latest.row->>'mobileNumber' AND conflicting_user.id <> user_record.id)`;
+        WHERE user_record."memberId" = member_record.id AND user_record.role = 'MEMBER'::"Role" AND user_record."mobileNumber" <> member_record."mobileNumber"
+          AND NOT EXISTS (SELECT 1 FROM "User" AS conflicting_user WHERE conflicting_user."mobileNumber" = member_record."mobileNumber" AND conflicting_user.id <> user_record.id)`;
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
-          SELECT DISTINCT ON (row->>'admissionId') row FROM rows WHERE NULLIF(row->>'mobileNumber','') IS NOT NULL ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
+          SELECT DISTINCT ON (row->>'admissionId') row FROM rows ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
         )
         UPDATE "User" AS user_record SET "pinHash" = ${pinHash}, "isActive" = true, "failedLoginCount" = 0, "lockedUntil" = NULL, "updatedAt" = CURRENT_TIMESTAMP
         FROM "Member" AS member_record JOIN latest ON latest.row->>'admissionId' = member_record."admissionId"
         WHERE user_record."memberId" = member_record.id AND user_record.role = 'MEMBER'::"Role" AND user_record."mustChangePassword" = true`;
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb)), latest AS (
-          SELECT DISTINCT ON (row->>'admissionId') row FROM rows WHERE NULLIF(row->>'mobileNumber','') IS NOT NULL ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
+          SELECT DISTINCT ON (row->>'admissionId') row FROM rows ORDER BY row->>'admissionId', (row->>'sourceRow')::int DESC
         )
         INSERT INTO "User" ("id", "memberId", "mobileNumber", "pinHash", "role", "mustChangePassword", "updatedAt")
-        SELECT gen_random_uuid(), member_record.id, latest.row->>'mobileNumber', ${pinHash}, 'MEMBER'::"Role", true, CURRENT_TIMESTAMP FROM "Member" AS member_record JOIN latest ON latest.row->>'admissionId' = member_record."admissionId"
-        WHERE NOT EXISTS (SELECT 1 FROM "User" AS user_record WHERE user_record."memberId" = member_record.id OR user_record."mobileNumber" = latest.row->>'mobileNumber')
+        SELECT gen_random_uuid(), member_record.id, member_record."mobileNumber", ${pinHash}, 'MEMBER'::"Role", true, CURRENT_TIMESTAMP FROM "Member" AS member_record JOIN latest ON latest.row->>'admissionId' = member_record."admissionId"
+        WHERE member_record."mobileNumber" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "User" AS user_record WHERE user_record."memberId" = member_record.id OR user_record."mobileNumber" = member_record."mobileNumber")
         ON CONFLICT DO NOTHING`;
       await transaction.$executeRaw`
         WITH rows AS (SELECT value AS row FROM jsonb_array_elements(${payload}::jsonb))

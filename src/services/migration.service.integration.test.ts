@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { runImport } from "./migration.service";
 
 const { queries, database } = vi.hoisted(() => {
@@ -21,6 +21,8 @@ vi.mock("bcryptjs", () => ({ default: { hash: vi.fn(async () => "test-hash") } }
 // one connection; no application records are read or modified.
 const url = process.env.TEST_DATABASE_URL;
 const client = url ? new PrismaClient({ datasources: { db: { url } } }) : undefined;
+beforeEach(() => { queries.length = 0; });
+
 afterAll(async () => { await client?.$disconnect(); });
 
 describe.skipIf(!client)("import profile preservation (PostgreSQL)", () => {
@@ -59,4 +61,40 @@ describe.skipIf(!client)("import profile preservation (PostgreSQL)", () => {
       }, { timeout: 20000 });
     } finally { vi.unstubAllEnvs(); }
   });
+  it.each(["9876500001", null])("keeps admin phone changes through imports with sheet mobile %s", async (mobile) => {
+    vi.stubEnv("MEMBER_INITIAL_PIN", "test-password");
+    const row = {
+      sourceSheet: "phone-regression", sourceRow: 1, admissionId: "ZF-TEST-2", name: "Phone Test",
+      mobile, gender: null, age: null, birthDate: null, address: null, medicalHistory: null,
+      category: null, totalAmount: 1000, discount: 0, paymentMode: null, paymentStatus: null,
+      remarks: null, timestamp: null, whatsappMessage: null, plan: "Monthly", startDate: "2026-10-01",
+      endDate: "2026-10-31", finalAmount: 1000, amountPaid: 1000, pendingAmount: 0,
+    };
+    try {
+      await runImport({ fetchMembershipRows: async () => [row] }, "test");
+      await client!.$transaction(async tx => {
+        for (const table of ["Member", "User"]) {
+          await tx.$executeRawUnsafe(`CREATE TEMP TABLE "${table}" (LIKE public."${table}" INCLUDING ALL) ON COMMIT DROP`);
+        }
+        const execute = async (query: typeof queries[number]) => tx.$executeRaw(Prisma.sql(query.strings, ...query.values));
+        await execute(queries[0]);
+        // Same atomic profile/login updates as the admin phone endpoint.
+        await tx.$executeRaw`UPDATE "Member" SET "mobileNumber" = '9876500002', "originalMobileNumber" = '+91 9876500002'`;
+        // Provisioning must use the saved phone even if the sheet is stale or blank.
+        await execute(queries[3]);
+        for (let repeat = 0; repeat < 2; repeat++) {
+          for (const query of queries.slice(0, 4)) await execute(query);
+        }
+        expect(await tx.$queryRaw`SELECT "mobileNumber", "originalMobileNumber" FROM "Member"`).toEqual([
+          { mobileNumber: "9876500002", originalMobileNumber: "+91 9876500002" },
+        ]);
+        expect(await tx.$queryRaw`SELECT "mobileNumber" FROM "User"`).toEqual([{ mobileNumber: "9876500002" }]);
+        // Repair an older login that still contains the sheet phone.
+        await tx.$executeRaw`UPDATE "User" SET "mobileNumber" = '9876500001'`;
+        await execute(queries[1]);
+        expect(await tx.$queryRaw`SELECT "mobileNumber" FROM "User"`).toEqual([{ mobileNumber: "9876500002" }]);
+      }, { timeout: 20000 });
+    } finally { vi.unstubAllEnvs(); }
+  });
+
 });
