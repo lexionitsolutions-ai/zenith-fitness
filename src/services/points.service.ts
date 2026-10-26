@@ -136,8 +136,8 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
   const transactions = await prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 });
   const targets = await prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } });
   const sums = await prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } });
-  const rankedMembers = await prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: { _sum: { points: "desc" } } });
-  const leaders = rankedMembers.slice(0, 50);
+  const rankedMembers = await prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: [{ _sum: { points: "desc" } }, { memberId: "asc" }] });
+  const leaders = rankedMembers;
   const memberRankIndex = rankedMembers.findIndex((leader) => leader.memberId === memberId);
   const currentMemberRank = memberRankIndex >= 0 ? memberRankIndex + 1 : null;
   const monthlyLeaders = await prisma.pointTransaction.groupBy({
@@ -145,8 +145,7 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
     where: { transactionType: "DAILY_VISIT", businessDate: { gte: monthStart, lt: nextMonthStart } },
     _sum: { points: true },
     _count: { id: true },
-    orderBy: [{ _sum: { points: "desc" } }, { _count: { id: "desc" } }],
-    take: 10,
+    orderBy: [{ _sum: { points: "desc" } }, { _count: { id: "desc" } }, { memberId: "asc" }],
   });
   const leaderMembers = await prisma.member.findMany({
     where: { id: { in: [...new Set([...leaders.map((leader) => leader.memberId), ...monthlyLeaders.map((leader) => leader.memberId)])] } },
