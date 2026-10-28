@@ -20,3 +20,16 @@ describe("profile completion", () => {
     expect(dashboard.alerts.some(alert => alert.type === "PROFILE_INCOMPLETE")).toBe(false);
   });
 });
+
+describe("canonical membership balances", () => {
+  it("does not show an unverified historical charge as an outstanding demand", async () => {
+    vi.mocked(prisma.member.findUnique).mockResolvedValue({
+      id:"member",managementMemberId:"canonical-member",fullName:"Member",admissionId:"ZF-101",gender:"Female",birthDate:new Date("1990-01-01"),address:"Saved address",
+      memberships:[{managementMembershipId:"canonical-period",startDate:new Date("2026-10-01"),endDate:new Date("2026-11-01"),paymentStatus:"REVIEW_REQUIRED",finalAmount:4000,amountPaid:0,pendingAmount:4000}],
+    } as unknown as Awaited<ReturnType<typeof prisma.member.findUnique>>);
+    const result=await getDashboard("member",new Date("2026-10-28T10:00:00Z"));
+    expect(result.payment).toBeNull();
+    expect(result.alerts.some(a=>a.type==="PAYMENT_PENDING")).toBe(false);
+    expect(result.dataWarnings).toContain("Payment history needs reconciliation by the front desk.");
+  });
+});

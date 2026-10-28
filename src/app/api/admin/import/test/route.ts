@@ -1,1 +1,8 @@
-import {getSession} from "@/lib/auth/session";import {GoogleAppsScriptAdapter} from "@/lib/sheets/adapters";import {AppError,apiError} from "@/lib/errors";export async function POST(){try{if((await getSession())?.role!=='ADMIN')throw new AppError('FORBIDDEN','Administrator access required.',403);const rows=await new GoogleAppsScriptAdapter().fetchMembershipRows();return Response.json({success:true,data:{rowCount:rows.length}})}catch(e){return apiError(e)}}
+import { requireActiveRole } from "@/lib/auth/authorize";
+import { AppError, apiError } from "@/lib/errors";
+export async function POST() {
+  try {
+    await requireActiveRole(["ADMIN"]);
+    throw new AppError("SOURCE_CHANGED", "Sheets imports are disabled. Memberships update automatically from Supabase.", 409);
+  } catch (error) { return apiError(error); }
+}

@@ -1,1 +1,30 @@
-"use client";import {useEffect,useState} from "react";import {Database,RefreshCw,Cloud} from "lucide-react";type Batch={id:string;status:string;totalRows:number;successfulRows:number;updatedRows:number;skippedRows:number;warningRows:number;failedRows:number;createdAt:string;logs:{id:string;sourceSheet:string;sourceRow:number;warningMessage?:string;errorMessage?:string}[]};export default function ImportPage(){const [batches,setBatches]=useState<Batch[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('');const load=()=>fetch('/api/admin/import').then(r=>r.json()).then(x=>setBatches(x.data??[]));useEffect(()=>{load()},[]);const run=async(source:'local'|'google',test=false)=>{setBusy(true);setMessage('');const r=await fetch(test?'/api/admin/import/test':'/api/admin/import',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({source})});const x=await r.json();setMessage(r.ok?(test?`Endpoint healthy: ${x.data.rowCount} rows available`:'Import completed'):x.error?.message);setBusy(false);load()};return <main className="mx-auto min-h-dvh max-w-5xl px-5 py-8"><header><p className="text-sm text-zenith-400">ZENITH OPERATIONS</p><h1 className="mt-1 text-3xl font-bold">Membership import</h1><p className="mt-2 text-white/50">Safely migrate legacy membership cycles without changing Google Sheets.</p></header><section className="mt-8 grid gap-3 sm:grid-cols-3"><button disabled={busy} onClick={()=>run('local')} className="flex min-h-24 items-center gap-3 rounded-2xl bg-zenith-500 p-5 font-bold"><Database/>Import sample JSON</button><button disabled={busy} onClick={()=>run('google',true)} className="flex min-h-24 items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 font-bold"><Cloud/>Test Sheets endpoint</button><button disabled={busy} onClick={()=>run('google')} className="flex min-h-24 items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 font-bold"><RefreshCw className={busy?'animate-spin':''}/>Run live import</button></section>{message&&<p className="mt-4 rounded-xl bg-white/5 p-4">{message}</p>}<section className="mt-10"><h2 className="text-xl font-bold">Recent batches</h2><div className="mt-4 space-y-3">{batches.length===0?<p className="text-white/40">No imports yet.</p>:batches.map(b=><details key={b.id} className="rounded-2xl border border-white/10 bg-white/[.04] p-5"><summary className="cursor-pointer font-semibold">{new Date(b.createdAt).toLocaleString()} · {b.status}</summary><div className="mt-4 grid grid-cols-3 gap-3 text-sm sm:grid-cols-6">{[['Rows',b.totalRows],['New',b.successfulRows],['Updated',b.updatedRows],['Skipped',b.skippedRows],['Warnings',b.warningRows],['Failed',b.failedRows]].map(([k,v])=><div key={k} className="rounded-xl bg-black/20 p-3"><p className="text-white/40">{k}</p><b>{v}</b></div>)}</div>{b.logs.map(l=><p key={l.id} className="mt-3 text-sm text-amber-300">{l.sourceSheet} row {l.sourceRow}: {l.warningMessage||l.errorMessage}</p>)}</details>)}</div></section></main>}
+"use client";
+import { useEffect, useState } from "react";
+import { Database, RefreshCw } from "lucide-react";
+type Batch = { id: string; status: string; totalRows: number; createdAt: string };
+export default function ImportPage() {
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  useEffect(() => { fetch("/api/admin/import").then(r => r.json()).then(x => setBatches(x.data ?? [])).catch(() => setMessage("Could not load sync history.")); }, []);
+  async function refresh() {
+    setBusy(true);setMessage("");
+    try {
+      const r = await fetch("/api/admin/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "supabase" }) });
+      const x = await r.json();
+      setMessage(r.ok ? `Verified ${x.data.members} members. Automatic updates are enabled.` : x.error?.message || "Could not verify membership sync.");
+    } catch { setMessage("Could not reach the server. Please retry."); }
+    finally { setBusy(false); }
+  }
+  return <main className="mx-auto min-h-dvh max-w-5xl px-5 py-8">
+    <p className="text-sm text-zenith-400">ZENITH OPERATIONS</p><h1 className="mt-1 text-3xl font-bold">Membership connection</h1>
+    <section className="mt-8 rounded-2xl border border-zenith-400/30 bg-zenith-500/10 p-6">
+      <div className="flex items-center gap-3 text-xl font-bold"><Database /> Supabase · Automatic updates</div>
+      <p className="mt-3 text-white/70">Admissions, renewals, payments and member corrections update automatically from the membership manager. You no longer need to import Google Sheets.</p>
+      <button disabled={busy} onClick={refresh} className="mt-5 flex min-h-12 items-center gap-3 rounded-xl bg-zenith-500 px-5 font-bold disabled:opacity-50"><RefreshCw className={busy ? "animate-spin" : ""} />{busy ? "Verifying…" : "Verify membership sync"}</button>
+      {message && <p role="status" className="mt-4">{message}</p>}
+    </section>
+    <h2 className="mt-10 text-xl font-bold">Previous import history</h2>
+    <div className="mt-4 space-y-3">{batches.map(b => <div key={b.id} className="rounded-xl border border-white/10 p-4">{new Date(b.createdAt).toLocaleString()} · {b.status} · {b.totalRows} rows</div>)}</div>
+  </main>;
+}

@@ -7,6 +7,7 @@ import { Dashboard } from "@/components/dashboard/dashboard";
 import { AnnouncementWindow } from "@/components/dashboard/announcement-window";
 import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { ZenithLogo } from "@/components/brand/zenith-logo";
+import { MembershipRefresh } from "@/components/dashboard/membership-refresh";
 
 export default async function Page() {
   const session = await getSession();
@@ -16,6 +17,7 @@ export default async function Page() {
     const [dashboard, notices] = await Promise.all([getDashboard(session.memberId), getDashboardAnnouncements()]);
     return (
       <>
+        <MembershipRefresh />
         <div className="app-topbar border-b border-white/10">
           <div className="safe-x mx-auto flex max-w-5xl items-center px-4 py-3 sm:px-8">
             <ZenithLogo compact />

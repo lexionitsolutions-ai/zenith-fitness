@@ -5,12 +5,20 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
   MEMBER
   STAFF
   ADMIN
+}
+
+// Server-only provisioning settings. The deployment role cannot edit this row.
+model ManagementSyncConfig {
+  id             Int     @id @default(1)
+  gymId          String  @db.Uuid
+  initialPinHash String?
 }
 
 enum PointTransactionType {
@@ -146,6 +154,7 @@ enum NotificationDeliveryStatus {
 
 model Member {
   id                   String             @id @default(uuid()) @db.Uuid
+  managementMemberId   String?            @unique @db.Uuid
   admissionId          String             @unique
   fullName             String
   mobileNumber         String?
@@ -242,6 +251,7 @@ model MembershipPlan {
 
 model Membership {
   id                  String           @id @default(uuid()) @db.Uuid
+  managementMembershipId String?        @unique @db.Uuid
   memberId            String           @db.Uuid
   member              Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
   planId              String?          @db.Uuid

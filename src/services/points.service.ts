@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors";
 import { hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
 import { getZeeBusinessDate } from "@/lib/utils/zee";
 import { normalizeAdmissionId } from "@/lib/utils/normalization";
+import { authoritativeMemberships } from "@/lib/utils/management-memberships";
 
 export { indiaBusinessDate };
 
@@ -76,7 +77,7 @@ export async function getCurrentDailyVisitStreak(memberId: string, now = new Dat
 export async function awardDailyVisit(qrToken: string, staffUserId: string) {
   const member = await prisma.member.findUnique({ where: { qrToken }, include: { memberships: true } });
   if (!member || !member.qrCodeActive) throw new AppError("INVALID_QR", "Member QR code is invalid.", 404);
-  if (!hasActiveMembership(member.memberships)) throw new AppError("MEMBERSHIP_INACTIVE", "Daily points are unavailable because this membership is expired or not yet active.", 409);
+  if (!hasActiveMembership(authoritativeMemberships(member))) throw new AppError("MEMBERSHIP_INACTIVE", "Daily points are unavailable because this membership is expired or not yet active.", 409);
 
   const date = indiaBusinessDate();
   const key = `daily:${member.id}:${date.toISOString().slice(0, 10)}`;

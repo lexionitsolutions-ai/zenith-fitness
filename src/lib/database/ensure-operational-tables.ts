@@ -5,6 +5,19 @@ let checked = false;
 export async function ensureOperationalTables() {
   if (checked) return;
 
+  if (process.env.MEMBERSHIP_SOURCE === "supabase") {
+    // Production uses a limited runtime DB role. DDL is applied during release,
+    // never by a member request or a serverless cold start.
+    const [state] = await prisma.$queryRaw<{ ready: boolean }[]>`
+      SELECT to_regclass('zenith_app."PushDevice"') IS NOT NULL
+        AND to_regclass('zenith_app."NotificationDelivery"') IS NOT NULL
+        AND to_regclass('zenith_app."PasswordResetRequest"') IS NOT NULL
+        AND to_regclass('zenith_app."ScheduleSession"') IS NOT NULL AS ready`;
+    if (!state?.ready) throw new Error("Apply the app database migrations before serving requests.");
+    checked = true;
+    return;
+  }
+
   await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS pgcrypto`);
   await prisma.$executeRawUnsafe(`DO $$ BEGIN CREATE TYPE "PushPlatform" AS ENUM ('IOS', 'ANDROID', 'WEB'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
   await prisma.$executeRawUnsafe(`DO $$ BEGIN CREATE TYPE "PushProvider" AS ENUM ('FCM', 'APNS', 'EXPO', 'WEB_PUSH'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);

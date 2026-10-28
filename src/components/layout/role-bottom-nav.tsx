@@ -11,7 +11,7 @@ import {
   TrendingUp,
   CalendarDays,
   Bell,
-  Upload,
+  Database,
   Users,
   UserRoundCog,
   Dumbbell,
@@ -23,7 +23,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
   const items =
     role === "ADMIN"
       ? [
-          { href: "/admin/import", label: "Import", icon: Upload },
+          { href: "/admin/import", label: "Sync", icon: Database },
           { href: "/admin/announcements", label: "Posts", icon: MessageSquare },
           { href: "/admin/points", label: "Ledger", icon: ScrollText },
           { href: "/admin/members", label: "Members", icon: UserRoundCog },

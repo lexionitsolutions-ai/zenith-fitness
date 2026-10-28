@@ -1,67 +1,69 @@
-# Zenith Fitness
+# Zenith Fitness member app
 
-A production-oriented, mobile-first member PWA built with Next.js App Router, TypeScript, Tailwind, PostgreSQL, and Prisma. Phase one provides secure mobile/PIN authentication, idempotent legacy membership import, an admin import console, and a member dashboard.
+Mobile-first member PWA and native wrapper built with Next.js, TypeScript,
+Tailwind, PostgreSQL and Prisma. The hosted app uses the same Supabase project
+as the Zenith membership manager.
 
-## Local setup
+## Automatic memberships
 
-1. Install Node.js 20+ and PostgreSQL 15+.
-2. Copy `.env.example` to `.env` and replace every secret. `SESSION_SECRET` should be at least 32 random characters.
-3. Create the database named `zenith_fitness` and update `DATABASE_URL` if needed.
-4. Run `npm install`, `npm run db:generate`, `npm run db:migrate -- --name init`, and `npm run db:seed`.
-5. Start with `npm run dev`, then open `http://localhost:3000`.
+Supabase is the source of truth. New admissions, renewals, payment collections,
+refunds and member corrections update the app automatically in the management
+write's database transaction. **Do not re-import Google Sheets.** The dashboard
+refreshes every 60 seconds while visible and when returning to the app.
 
-On Windows PowerShell systems that block script shims, use `npm.cmd` in place of `npm`.
+App accounts, passwords, QR codes, points, workout assignments, targets and
+announcements are preserved in the private `zenith_app` schema. The management
+tables remain in `public`. Linked members use canonical membership periods;
+older imported cycles remain stored as history. Payment amounts awaiting
+reconciliation are not displayed as verified dues. Membership dates use
+`Asia/Kolkata`.
 
-## Environment
+The admin page `/admin/import` now shows the automatic connection and a
+repeat-safe verification action. Former Sheets/sample import writes are blocked.
+New members with a valid unique phone receive the configured initial temporary
+password and must replace it on first login. Existing passwords are never reset
+by membership sync.
 
-`DATABASE_URL`, `SESSION_SECRET`, `GOOGLE_SHEETS_API_URL`, `IMPORT_API_SECRET`, `NEXT_PUBLIC_APP_NAME`, `ADMIN_MOBILE`, `ADMIN_PIN`, and `TEST_MEMBER_PIN` are documented in `.env.example`. Only the app name is browser-visible.
+## Configuration and setup
 
-## Admin and member access
+Use Node.js 24 and `npm.cmd` on Windows. Copy `.env.example` to a private `.env`.
+All connection strings and credentials are server-only; none use a
+`NEXT_PUBLIC_` prefix. Only the display app name is browser-visible.
 
-The seed creates an admin using `ADMIN_MOBILE` and `ADMIN_PIN`. Run the import from `/admin/import`. To provision an account for every imported member with a valid, unique mobile number, set `MEMBER_INITIAL_PIN` to a temporary password of at least eight characters and run the import. Members must change this password during first sign-in. Mobile numbers already used by staff or administrators are never replaced.
+- `DATABASE_URL`: Supabase transaction pooler, port 6543, with
+  `schema=zenith_app&pgbouncer=true&connection_limit=1&sslmode=require`.
+- `DIRECT_URL`: session pooler, port 5432, for the migration owner. The hosted
+  runtime uses a limited account and does not apply DDL on requests.
+- `MEMBERSHIP_SOURCE=supabase` enables read-only operational-schema validation.
+- Preserve `SESSION_SECRET`, existing account hashes and app record IDs during
+  migration. Do not run seeds against existing accounts to connect the database.
+- Preserve the configured `MEMBER_INITIAL_PIN` for provisioning new accounts;
+  its hash is stored in the private, runtime-protected sync configuration.
 
-## Import sources
+See [database connection and deployment](docs/supabase-connection.md) for the
+one-time migration, backup, permissions and recovery procedure. Do not apply the
+app migrations to the management system's `public` schema. The read-only public
+`/api/health` endpoint verifies connection readiness without exposing member data.
 
-Choose **Import sample JSON** to import `src/data/sample-memberships.json`. It includes active, expired, upcoming, partial-payment, missing-mobile, invalid-date, and repeat-member scenarios. Re-running it updates the same source rows, demonstrating idempotency.
+## Validation
 
-For Apps Script, configure `GOOGLE_SHEETS_API_URL`. The endpoint must return an array matching `RawMembershipRow`; if `IMPORT_API_SECRET` is set, it is sent server-to-server as `x-import-secret`. The URL and secret never reach the browser. Use **Test Sheets endpoint** before a live import.
-
-Re-imports preserve the saved name, gender, birth date, address, and medical history of existing members, including cleared fields. These profile fields are initialized from the sheet only for new members; existing members edit them in the app. Memberships, payments, and source/contact metadata continue to sync from the sheet.
-
-## Commands
-
-- `npm run dev` — local server
-- `npm run build` — production build
-- `npm run typecheck` — strict TypeScript check
+- `npm run typecheck` — TypeScript validation
 - `npm test` — unit tests
-- `npm run db:migrate -- --name init` — create/apply migration
-- `npm run db:seed` — seed plans and admin
+- `npm run build` — production build and generated Prisma client
+- `prisma/tests/management-sync.sql` — rollback-only automatic-sync regression
+- `prisma/tests/management-rpc-smoke.sql` — rollback-only authenticated source RPC
 
-The PostgreSQL import regression test runs when `TEST_DATABASE_URL` is set. It uses isolated temporary tables and leaves application records unchanged.
+The old Sheets import regression suite is retained for historical data mapping
+and runs only when `TEST_DATABASE_URL` is explicitly configured.
 
-## Manual test checklist
+## Member and staff features
 
-- Sign in with wrong credentials five times and verify generic errors and temporary lockout.
-- Sign in as admin; verify members cannot open `/admin/import`.
-- Import sample JSON twice; verify the second batch updates rather than duplicates source rows.
-- Inspect warnings for invalid mobile, plan, or dates; verify one bad row does not stop the batch.
-- Sign in as a linked test member and verify membership priority, amounts, alerts, logout, and mobile widths at 360/390px.
-- Open `/workout` as a member; select each supported fitness goal in a test account and verify beginner/intermediate assignment, dashboard stats, day cards, exercise video fallback, completion, undo, continue workout, history, and goal-change confirmation.
-- Sign in as admin; open `/admin/workouts`, update an exercise video/instruction record, assign a member plan, and verify members cannot access admin workout routes.
-- Verify unauthenticated dashboard/API access is rejected and cookies are HTTP-only.
-- Test standalone installation; authenticated API responses are not service-worker cached.
+Members can view current memberships, balances, announcements, schedules,
+workouts, progress, BMI/fitness targets, points, QR codes and rankings. Staff can
+scan QR codes, award daily visit points and manage targets. Admin tools manage
+accounts, schedules, announcements, workouts, notifications and points.
 
-## Current limitations and next step
-
-This milestone still excludes OTP, full attendance reporting, online payments, diet plans, WhatsApp automation, and renewal processing. Workout plans now support seeded plan cards, member progress, and admin assignment, with temporary station/video placeholders until final Zenith media and equipment data are supplied. The manifest provides installable structure; a service worker is intentionally omitted to avoid insecure caching until an explicit offline asset strategy is approved. The recommended next step is audited OTP account provisioning, followed by staging deployment against Supabase PostgreSQL.
-
-## QR points, staff, targets, and leaderboard
-
-Members open `/points` to display their permanent opaque QR token, balance, transaction history, targets, and privacy-limited top-20 leaderboard. Staff sign in at `/login` and are redirected to `/staff`, where they can scan QR codes, award the fixed five daily points, assign targets with custom reward points, and complete a target for its assigned reward. Daily boundaries use `Asia/Kolkata`; database-unique reference keys prevent concurrent duplicate awards. Admins can inspect the ledger at `/admin/points` and use the protected points API for audited adjustments or reversals.
-
-Set `STAFF_MOBILE` and `STAFF_PIN` in `.env`, then run `npm.cmd run db:seed` to create or update the staff account. Camera scanning requires localhost or HTTPS and browser camera permission. The common member PIN and staff PIN are development conveniences only and must be replaced by OTP/individual credentials before production.
-
-See `docs/` for database, mapping, import, and API details.
-
-Workout module design, schema, seed, station mapping, and API notes are documented in `docs/workout-module.md`.
-Workout exercise videos are seeded from `src/data/workouts/exercises.normalized.json`; verified videos render through privacy-enhanced YouTube embeds, while owner-confirmation records remain hidden from members until approved.
+Native push uses the existing Firebase configuration. See `docs/` for module
+details and `docs/workout-module.md` for workout/video setup. Account access is
+checked by the existing session and role controls; the database connection does
+not make member data publicly accessible.
