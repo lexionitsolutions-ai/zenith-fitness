@@ -172,6 +172,7 @@ model Member {
   updatedAt            DateTime           @updatedAt
   user                 User?
   memberships          Membership[]
+  qrAliases            AppQrAlias[]
   pointTransactions    PointTransaction[]
   targets              MemberTarget[]
   fitnessTargets       MemberFitnessTarget[]
@@ -182,6 +183,8 @@ model Member {
 
 model User {
   id                       String             @id @default(uuid()) @db.Uuid
+  sessionAliases           AppSessionAlias[]
+  loginAliases             AppLoginAlias[]
   memberId                 String?            @unique @db.Uuid
   member                   Member?            @relation(fields: [memberId], references: [id], onDelete: Cascade)
   mobileNumber             String             @unique
@@ -206,6 +209,25 @@ model User {
   notificationDeliveries   NotificationDelivery[]
   passwordResetRequests    PasswordResetRequest[] @relation("PasswordResetMember")
   handledPasswordResets    PasswordResetRequest[] @relation("PasswordResetHandledBy")
+}
+
+model AppSessionAlias {
+  previousUserId   String  @id @db.Uuid
+  previousMemberId String? @db.Uuid
+  userId           String  @db.Uuid
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model AppQrAlias {
+  token    String @id @db.Uuid
+  memberId String @db.Uuid
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model AppLoginAlias {
+  mobileNumber String @id
+  userId       String @db.Uuid
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model PasswordResetRequest {

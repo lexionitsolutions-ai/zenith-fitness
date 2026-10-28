@@ -75,7 +75,8 @@ export async function getCurrentDailyVisitStreak(memberId: string, now = new Dat
 }
 
 export async function awardDailyVisit(qrToken: string, staffUserId: string) {
-  const member = await prisma.member.findUnique({ where: { qrToken }, include: { memberships: true } });
+  const primary = await prisma.member.findUnique({ where: { qrToken }, include: { memberships: true } });
+  const member = primary ?? (await prisma.appQrAlias.findUnique({ where: { token: qrToken }, include: { member: { include: { memberships: true } } } }))?.member;
   if (!member || !member.qrCodeActive) throw new AppError("INVALID_QR", "Member QR code is invalid.", 404);
   if (!hasActiveMembership(authoritativeMemberships(member))) throw new AppError("MEMBERSHIP_INACTIVE", "Daily points are unavailable because this membership is expired or not yet active.", 409);
 

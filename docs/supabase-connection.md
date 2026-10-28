@@ -49,3 +49,18 @@ admission IDs or write payment records.
 The recovery action is not required after admissions or renewals. The previous
 Sheets/sample import APIs reject writes so stale exports cannot replace current
 data. The original local DB backup remains available for rollback.
+
+## Existing production accounts
+
+The prior production Supabase database is reconciled separately from the local
+development backup. Match members by admission ID and retain production IDs,
+password hashes, QR tokens, ledger transactions, targets and workout history.
+Never reset established passwords to the shared temporary password. A password
+explicitly changed on the new live app during migration takes precedence over
+its older production hash. Compare hashes privately; do not log or commit them.
+
+`AppSessionAlias`, `AppQrAlias` and `AppLoginAlias` retain compatibility for
+interim sessions, QR tokens and existing login numbers after ID reconciliation.
+Aliases cannot change a session's role/member or reactivate a disabled account.
+Source memberships/payment ledgers remain unchanged. Deduplicate reward keys
+after identity mapping so an initial BMI award is not counted twice.
