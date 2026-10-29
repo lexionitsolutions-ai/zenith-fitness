@@ -2,7 +2,6 @@
 
 import { AlertTriangle, ArrowRight, Dumbbell, IndianRupee, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import Link from "next/link";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
@@ -70,16 +69,8 @@ export function Dashboard({ data }: { data: Data }) {
   const membership = data.membership;
   const payment = data.payment;
 
-  useEffect(() => {
-    const target = data.fitnessTarget.target;
-    if (!target?.bmiDue) return;
-    const key = `bmi-reminder:${target.id}:${target.nextBmiDate}`;
-    if (localStorage.getItem(key)) return;
-    localStorage.setItem(key, new Date().toISOString());
-    if (confirm("Time for Your BMI Check!\n\nIt's been 45 days since your last BMI assessment. Get your BMI test done to see how far you've progressed toward your target.")) {
-      router.push("/set-target?mode=update");
-    }
-  }, [data.fitnessTarget.target, router]);
+  // The due-BMI card below is non-blocking. Do not open a native confirm dialog
+  // or require browser storage while a member is reopening the dashboard.
 
   async function logout() {
     await unregisterPushNotifications().catch(console.error);

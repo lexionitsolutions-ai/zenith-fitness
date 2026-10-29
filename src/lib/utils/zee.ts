@@ -67,7 +67,10 @@ export const zeeWarningLines = [
 
 export function getZeeProgress(streak: number) {
   const days = Number.isFinite(streak) ? Math.max(0, Math.floor(streak)) : 0;
-  const index = zeeStages.findLastIndex(stage => days >= stage.days);
+  // Avoid findLastIndex: older Android WebViews can lack this method even
+  // when the rest of the dashboard works.
+  let index = 0;
+  for (let i=zeeStages.length-1;i>=0;i--) { if (days>=zeeStages[i].days) {index=i;break;} }
   const stage = zeeStages[index];
   const next = zeeStages[index + 1] ?? null;
   return { days, index, stage, next, remaining: next ? next.days - days : 0 };

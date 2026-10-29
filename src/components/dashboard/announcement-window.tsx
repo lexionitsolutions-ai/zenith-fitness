@@ -23,15 +23,19 @@ export function AnnouncementWindow({ data }: { data: Data }) {
 
   useEffect(() => {
     let active = true;
+    let fetching = false;
+    let lastRefresh = Date.now();
 
     async function refresh() {
+      if (fetching || document.visibilityState !== "visible" || Date.now()-lastRefresh<15000) return;
+      fetching = true;
       try {
         const response = await fetch("/api/member/announcements", { cache: "no-store" });
         const result = await response.json();
-        if (active && response.ok) setCurrent(result.data);
+        if (active && response.ok) {setCurrent(result.data);lastRefresh=Date.now();}
       } catch (error) {
         console.info("Announcement refresh failed", error);
-      }
+      } finally {fetching=false;}
     }
 
     function refreshWhenVisible() {
@@ -40,7 +44,6 @@ export function AnnouncementWindow({ data }: { data: Data }) {
 
     document.addEventListener("visibilitychange", refreshWhenVisible);
     const timer = window.setInterval(refresh, 60_000);
-    void refresh();
 
     return () => {
       active = false;
@@ -48,6 +51,7 @@ export function AnnouncementWindow({ data }: { data: Data }) {
       window.clearInterval(timer);
     };
   }, []);
+  useEffect(()=>{setCurrent(data);},[data]);
 
   if (hidden) return null;
 

@@ -1,0 +1,3 @@
+export default function Loading() {
+  return <main className="grid min-h-dvh place-items-center bg-[#07110e] px-6" role="status" aria-live="polite"><section className="w-full max-w-sm"><p className="text-xs font-black uppercase tracking-[.3em] text-zenith-300">Zenith Fitness</p><h1 className="mt-4 text-2xl font-black">Opening your app…</h1><p className="mt-2 text-sm leading-relaxed text-white/55">Getting your membership ready. This may take a moment on a slower connection.</p><div aria-hidden="true" className="mt-6 space-y-3 motion-safe:animate-pulse"><div className="h-28 rounded-3xl border border-white/10 bg-white/5"/><div className="h-16 rounded-2xl border border-white/10 bg-white/5"/></div></section></main>;
+}

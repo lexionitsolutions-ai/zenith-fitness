@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { safeLocalStorage } from "@/lib/browser-storage";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications, type Token } from "@capacitor/push-notifications";
 
@@ -36,12 +37,12 @@ async function saveToken(token: string) {
   });
 
   if (!response.ok) throw new Error("Could not register push notification token.");
-  window.localStorage.setItem(registeredTokenKey, token);
+  safeLocalStorage.setItem(registeredTokenKey, token);
   console.info("[push] device token registered");
 }
 
 export async function unregisterPushNotifications() {
-  const token = window.localStorage.getItem(registeredTokenKey);
+  const token = safeLocalStorage.getItem(registeredTokenKey);
   if (!token) return;
 
   await fetch("/api/member/notifications/devices", {
@@ -49,7 +50,7 @@ export async function unregisterPushNotifications() {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ token }),
   });
-  window.localStorage.removeItem(registeredTokenKey);
+  safeLocalStorage.removeItem(registeredTokenKey);
 }
 
 export function PushNotificationRegistration() {

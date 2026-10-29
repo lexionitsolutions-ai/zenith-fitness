@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { MobileNavigationGestures } from "@/components/layout/mobile-navigation-gestures";
 import { PushNotificationRegistration } from "@/components/notifications/push-notification-registration";
+import { AppResumeRecovery } from "@/components/app/app-resume-recovery";
 
 export const metadata: Metadata = {
   title: { default: "Zenith Fitness", template: "%s - Zenith Fitness" },
@@ -34,6 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
+        <AppResumeRecovery />
         <PushNotificationRegistration />
         <MobileNavigationGestures />
         {children}

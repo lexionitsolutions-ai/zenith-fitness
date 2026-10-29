@@ -1,13 +1,14 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { refreshCurrentRoute } from "@/lib/route-refresh";
 export function MembershipRefresh() {
   const router = useRouter();
   useEffect(() => {
     const refresh = () => {
       if (document.visibilityState !== "visible") return;
       if (document.activeElement?.matches("input,textarea,select,[contenteditable=true]")) return;
-      router.refresh();
+      refreshCurrentRoute(() => router.refresh());
     };
     const timer = window.setInterval(refresh, 60_000);
     window.addEventListener("focus", refresh);

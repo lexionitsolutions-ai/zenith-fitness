@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { getStreakAward } from "@/lib/utils/streak-awards";
+import { refreshCurrentRoute } from "@/lib/route-refresh";
 import { StreakStoryDialog } from "@/components/dashboard/streak-story-dialog";
 import { getNextIndiaMidnight, getZeeBusinessDate, getZeeLine, getZeeProgress, zeeStages, type ZeeStage } from "@/lib/utils/zee";
 
@@ -120,7 +121,7 @@ export function ZeeStreakCard(props: ZeeStreakProps) {
       const now = new Date();
       setClock(now.getTime());
       setBusinessDate(getZeeBusinessDate(now));
-      if (refresh) router.refresh();
+      if (refresh) refreshCurrentRoute(() => router.refresh());
       const deadlines = [getNextIndiaMidnight(now).getTime()];
       if (expiresAt !== null) deadlines.push(expiresAt - 4 * 3600000, expiresAt + 1);
       const next = Math.min(...deadlines.filter(time => time > now.getTime()));
