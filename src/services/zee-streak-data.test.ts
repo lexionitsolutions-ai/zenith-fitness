@@ -7,6 +7,7 @@ vi.mock("@/lib/database/prisma", () => ({ prisma: {
   member: { findUnique: vi.fn(), findMany: vi.fn(async () => []) },
   pointTransaction: { findMany: vi.fn(async () => []), aggregate: vi.fn(async () => ({ _sum: { points: 135 } })), groupBy: vi.fn(async () => []) },
   memberTarget: { findMany: vi.fn(async () => []) },
+  $queryRaw: vi.fn(async () => [{ memberId: "member", fullName: "Zee Preview", admissionId: "ZF-PREVIEW", totalPoints: 135n, monthlyPoints: 0n, monthlyVisits: 0n }]),
 } }));
 vi.mock("@/services/fitness-target.service", () => ({ getFitnessTarget: vi.fn(async () => ({ target: null, rewardClaimed: true })) }));
 

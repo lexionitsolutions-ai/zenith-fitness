@@ -2,6 +2,7 @@ import {SignJWT,jwtVerify} from "jose";import {cookies} from "next/headers";impo
 import { prisma } from "@/lib/database/prisma";
 import { resolveSessionAlias } from "./session-alias";
 import { cache } from "react";
+import { sessionAccountQuery, type SessionAccount } from "./session-account";
 const key=()=>new TextEncoder().encode(process.env.SESSION_SECRET||"development-only-secret-change-me");export type Session={userId:string;memberId:string|null;role:Role;onboardingRequired?:boolean};
 export const SESSION_MAX_AGE_SECONDS=60*60*24*365;
 export async function createSession(s:Session){const token=await new SignJWT(s).setProtectedHeader({alg:"HS256"}).setIssuedAt().setExpirationTime("365d").sign(key());(await cookies()).set("zenith_session",token,{httpOnly:true,secure:process.env.NODE_ENV==="production",sameSite:"lax",path:"/",maxAge:SESSION_MAX_AGE_SECONDS})}
@@ -17,20 +18,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
 
   // Resolve the alias and read the current account in one round trip. Query
   // parameters stay bound by Prisma; account access is checked on every request.
-  const [account] = await prisma.$queryRaw<{
-    previousUserId: string | null;
-    previousMemberId: string | null;
-    id: string | null;
-    memberId: string | null;
-    role: Role | null;
-    isActive: boolean | null;
-  }[]>`
-    SELECT a."previousUserId", a."previousMemberId",
-      u.id, u."memberId", u.role, u."isActive"
-    FROM (SELECT ${session.userId}::uuid AS id) AS s
-    LEFT JOIN "AppSessionAlias" AS a ON a."previousUserId" = s.id
-    LEFT JOIN "User" AS u ON u.id = COALESCE(a."userId", s.id)
-  `;
+  const [account] = await prisma.$queryRaw<SessionAccount[]>(sessionAccountQuery(session.userId));
   if (!account?.id || !account.role || !account.isActive) return null;
   const user = { id: account.id, memberId: account.memberId, role: account.role, isActive: account.isActive };
   const alias = account.previousUserId ? { previousMemberId: account.previousMemberId, user } : null;

@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors";
 import { hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
 import { getZeeBusinessDate } from "@/lib/utils/zee";
 import { normalizeAdmissionId } from "@/lib/utils/normalization";
+import { appDatabaseObject } from "@/lib/database/app-object";
 import { authoritativeMemberships } from "@/lib/utils/management-memberships";
 
 export { indiaBusinessDate };
@@ -129,37 +130,44 @@ export async function findMemberForDailyVisit(input: string) {
   return { qrToken: member.qrToken, admissionId: member.admissionId, name: member.fullName };
 }
 
-export async function getMemberPoints(memberId: string, now = new Date()) {
-  const member = await prisma.member.findUnique({ where: { id: memberId }, select: { qrToken: true, admissionId: true, fullName: true } });
-  if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
+type PointsRanking = { memberId: string; fullName: string; admissionId: string; totalPoints: bigint; monthlyPoints: bigint; monthlyVisits: bigint };
 
+async function memberRankings(now: Date) {
   const monthStart = startOfIndiaMonth(now);
   const nextMonthStart = startOfNextMonth(monthStart);
-  const [transactions, targets, sums, rankedMembers, monthlyLeaders, streakStatus] = await Promise.all([
+  // One grouped read replaces two ranking queries, member-name lookup and
+  // member-balance aggregation. Dates stay bound, and every table is qualified.
+  return prisma.$queryRaw<PointsRanking[]>`
+    SELECT p."memberId", m."fullName", m."admissionId",
+      SUM(p.points)::bigint AS "totalPoints",
+      COALESCE(SUM(p.points) FILTER (WHERE p."transactionType" = 'DAILY_VISIT'
+        AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date), 0)::bigint AS "monthlyPoints",
+      COUNT(*) FILTER (WHERE p."transactionType" = 'DAILY_VISIT'
+        AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date) AS "monthlyVisits"
+    FROM ${appDatabaseObject("PointTransaction")} AS p
+    JOIN ${appDatabaseObject("Member")} AS m ON m.id = p."memberId"
+    GROUP BY p."memberId", m."fullName", m."admissionId"
+    ORDER BY "totalPoints" DESC, p."memberId" ASC
+  `;
+}
+
+export async function getMemberPoints(memberId: string, now = new Date()) {
+  const [member, transactions, targets, rankings, streakStatus] = await Promise.all([
+    prisma.member.findUnique({ where: { id: memberId }, select: { qrToken: true, admissionId: true, fullName: true } }),
     prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 }),
     prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } }),
-    prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } }),
-    prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: [{ _sum: { points: "desc" } }, { memberId: "asc" }] }),
-    prisma.pointTransaction.groupBy({
-      by: ["memberId"],
-      where: { transactionType: "DAILY_VISIT", businessDate: { gte: monthStart, lt: nextMonthStart } },
-      _sum: { points: true },
-      _count: { id: true },
-      orderBy: [{ _sum: { points: "desc" } }, { _count: { id: "desc" } }, { memberId: "asc" }],
-    }),
+    memberRankings(now),
     getDailyVisitStreakStatus(memberId, now),
   ]);
-  const leaders = rankedMembers;
-  const memberRankIndex = rankedMembers.findIndex((leader) => leader.memberId === memberId);
+  if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
+  const memberRankIndex = rankings.findIndex(row => row.memberId === memberId);
   const currentMemberRank = memberRankIndex >= 0 ? memberRankIndex + 1 : null;
-  const leaderMembers = await prisma.member.findMany({
-    where: { id: { in: [...new Set([...leaders.map((leader) => leader.memberId), ...monthlyLeaders.map((leader) => leader.memberId)])] } },
-    select: { id: true, fullName: true, admissionId: true },
-  });
-  const byId = new Map(leaderMembers.map((leaderMember) => [leaderMember.id, leaderMember]));
+  const pointsBalance = memberRankIndex >= 0 ? Number(rankings[memberRankIndex].totalPoints) : 0;
+  const monthlyLeaders = rankings.filter(row => Number(row.monthlyVisits) > 0).sort((a, b) =>
+    Number(b.monthlyPoints) - Number(a.monthlyPoints) || Number(b.monthlyVisits) - Number(a.monthlyVisits) || (a.memberId < b.memberId ? -1 : a.memberId > b.memberId ? 1 : 0));
   return {
     member,
-    pointsBalance: sums._sum.points ?? 0,
+    pointsBalance,
     currentMemberRank,
     streakBusinessDate: getZeeBusinessDate(now),
     currentStreak: streakStatus.currentStreak,
@@ -178,29 +186,21 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
       completedAt: target.completedAt?.toISOString() ?? null,
       createdAt: target.createdAt.toISOString(),
     })),
-    leaderboard: leaders.flatMap((leader, index) => {
-      const leaderMember = byId.get(leader.memberId);
-      if (!leaderMember) return [];
-      return {
-        rank: index + 1,
-        name: leaderMember.fullName.split(" ")[0],
-        admissionId: `${leaderMember.admissionId.slice(0, 3)}***${leaderMember.admissionId.slice(-2)}`,
-        points: leader._sum.points ?? 0,
-        isCurrentMember: leader.memberId === memberId,
-      };
-    }),
-    monthlyAchievers: monthlyLeaders.flatMap((leader, index) => {
-      const leaderMember = byId.get(leader.memberId);
-      if (!leaderMember) return [];
-      return {
-        rank: index + 1,
-        name: leaderMember.fullName.split(" ")[0],
-        admissionId: `${leaderMember.admissionId.slice(0, 3)}***${leaderMember.admissionId.slice(-2)}`,
-        points: leader._sum.points ?? 0,
-        visits: leader._count.id,
-        isCurrentMember: leader.memberId === memberId,
-      };
-    }),
+    leaderboard: rankings.map((row, index) => ({
+      rank: index + 1,
+      name: row.fullName.split(" ")[0],
+      admissionId: `${row.admissionId.slice(0, 3)}***${row.admissionId.slice(-2)}`,
+      points: Number(row.totalPoints),
+      isCurrentMember: row.memberId === memberId,
+    })),
+    monthlyAchievers: monthlyLeaders.map((row, index) => ({
+      rank: index + 1,
+      name: row.fullName.split(" ")[0],
+      admissionId: `${row.admissionId.slice(0, 3)}***${row.admissionId.slice(-2)}`,
+      points: Number(row.monthlyPoints),
+      visits: Number(row.monthlyVisits),
+      isCurrentMember: row.memberId === memberId,
+    })),
   };
 }
 

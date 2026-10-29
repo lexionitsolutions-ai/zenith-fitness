@@ -5,6 +5,7 @@ import { membershipPeriod, planForGender, renewalDiscount, upiPaymentUrl, MERCHA
 import { indiaBusinessDate } from "@/lib/utils/point-rules";
 import { authoritativeMemberships } from "@/lib/utils/management-memberships";
 import { membershipWhatsAppUrl } from "@/lib/membership-whatsapp";
+import { appDatabaseObject } from "@/lib/database/app-object";
 
 async function serial<T>(work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
   for (let i = 0; ; i++) {
@@ -44,7 +45,7 @@ export async function purchaseOverview(userId: string) {
 
 export async function createMembershipOrder(userId: string, planCode: string, replaceExisting = false) {
   return serial(async tx => {
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${userId}::uuid FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM ${appDatabaseObject("User")} WHERE id=${userId}::uuid FOR UPDATE`;
     const user = await tx.user.findUnique({ where: { id: userId }, include: { member: true, applicantProfile: true } });
     if (!user?.isActive || user.role !== "MEMBER") throw new AppError("UNAUTHORIZED", "Active member account required.", 401);
     const existing = await tx.membershipOrder.findFirst({ where: { userId, status: { in: ["AWAITING_PAYMENT", "PENDING_REVIEW"] } } });
@@ -115,7 +116,7 @@ export async function reviewMembershipOrder(adminId: string, orderId: string, de
     await tx.membershipOrder.update({ where: { id: orderId }, data: { reviewedById: adminId } });
     let membershipId: string;
     if (process.env.MEMBERSHIP_SOURCE === "supabase") {
-      const rows = await tx.$queryRaw<{ id: string }[]>`SELECT approve_app_membership(${order.id}::uuid) AS id`;
+      const rows = await tx.$queryRaw<{ id: string }[]>`SELECT ${appDatabaseObject("approve_app_membership")}(${order.id}::uuid) AS id`;
       membershipId = rows[0].id;
     } else {
       let member = user.member;

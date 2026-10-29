@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/database/prisma";
 import { Prisma } from "@prisma/client";
+import { appDatabaseObject } from "@/lib/database/app-object";
 
 function indiaDateParts(now: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -49,7 +50,7 @@ export async function getBirthdayAnnouncementMembers(now = new Date()) {
     mobileNumber: string | null; birthDate: Date;
   }[]>`
     SELECT id, "fullName", "admissionId", "mobileNumber", "birthDate"
-    FROM "Member"
+    FROM ${appDatabaseObject("Member")}
     WHERE "birthDate" IS NOT NULL
       AND to_char("birthDate", 'MM-DD') IN (${Prisma.join([...birthdayKeys])})
     ORDER BY "fullName" ASC

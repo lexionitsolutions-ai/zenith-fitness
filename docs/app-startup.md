@@ -35,7 +35,11 @@ Android WebViews.
 The home middleware redirects from the signed session without opening a database
 connection; the destination still verifies account access against the database.
 Session alias and active-account validation use one parameterized SQL join and
-are deduplicated within each server render. Dashboard member/target/streak reads
+are deduplicated within each server render. Raw account, birthday, and payment
+queries explicitly qualify the schema from DATABASE_URL; they never rely on a
+pooled connection's search_path. An unqualified AppSessionAlias lookup reproduced
+an intermittent 42P01 error with transaction pooling after schema consolidation.
+Dashboard member/target/streak reads
 and independent points queries run in parallel. Fitness-target selection prefers
 active over completed goals in one ordered query, alongside the reward lookup.
 Dashboard announcements stream separately so images cannot hold up membership
@@ -51,6 +55,13 @@ time; search still covers the full list. Member lookup aggregates the points
 balance in PostgreSQL instead of downloading ledger rows, and omits empty phone
 alternatives so admission-ID searches cannot accidentally match another member.
 
+Visited page segments remain in this browser's in-memory router cache for 30
+seconds, so repeated tab taps reuse their content. This is the Next.js 15
+experimental [staleTimes setting](https://nextjs.org/docs/app/api-reference/config/next-config-js/staleTimes).
+Explicit refresh and logout invalidate snapshots; API authorization and writes
+still check current database state. The Points read combines balance, names,
+overall ranking and monthly ranking in one grouped query, preserving all ranks.
+
 Read-only HTTP timing checks:
 
 ```powershell
@@ -58,6 +69,7 @@ node scripts/benchmark-app.cjs --output=output/speed-local.json
 node scripts/benchmark-app.cjs --public --origin=https://zenith-fitness-theta.vercel.app --output=output/speed-public.json
 node scripts/compare-startup-performance.cjs
 node scripts/benchmark-app.cjs --staff --output=output/speed-staff.json
+node scripts/benchmark-navigation.cjs --verify-cache --output=output/navigation-verified.json
 ```
 
 The default check uses one existing active member and a temporary signed session
@@ -68,6 +80,10 @@ including full response streaming, rather than browser paint/hydration metrics.
 The comparison script alternates the working-tree dashboard service with `HEAD`
 using the same member, clock, and pool. It checks identical business results and
 reports medians from three paired samples; temporary baseline sources are removed.
+The navigation script requires Playwright in the ignored `.zee-qa/browser-tools`
+folder and installed Edge. It taps real member tabs with a mobile viewport,
+records content-ready time and destination RSC request counts, then optionally
+checks expiry, explicit refresh and logout using a temporary browser session.
 
 Checks:
 
