@@ -27,20 +27,18 @@ export async function getDashboard(memberId: string, now = new Date()) {
   if (selected?.paymentStatus === "REVIEW_REQUIRED") warnings.push("Payment history needs reconciliation by the front desk.");
   if (completion < 100) alerts.push({ type: "PROFILE_INCOMPLETE", severity: "info", title: "Complete your profile", message: "Fill the remaining safe profile details below." });
 
-  let fitnessTarget: Awaited<ReturnType<typeof getFitnessTarget>> = { target: null, rewardClaimed: false };
-  let streakStatus: Awaited<ReturnType<typeof getDailyVisitStreakStatus>> = { currentStreak: 0, streakExpiresAt: null, streakExpiresSoon: false };
-  try {
-    fitnessTarget = await getFitnessTarget(memberId);
-  } catch (error) {
-    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
-    warnings.push("Fitness target tables are not migrated yet.");
-  }
-  try {
-    streakStatus = await getDailyVisitStreakStatus(memberId, now);
-  } catch (error) {
-    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
-    warnings.push("Point tables are not migrated yet.");
-  }
+  const [fitnessTarget, streakStatus] = await Promise.all([
+    getFitnessTarget(memberId).catch((error) => {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
+      warnings.push("Fitness target tables are not migrated yet.");
+      return { target: null, rewardClaimed: false };
+    }),
+    getDailyVisitStreakStatus(memberId, now).catch((error) => {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
+      warnings.push("Point tables are not migrated yet.");
+      return { currentStreak: 0, streakExpiresAt: null, streakExpiresSoon: false };
+    }),
+  ]);
 
   return {
     member: {

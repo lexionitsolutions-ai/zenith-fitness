@@ -31,9 +31,9 @@ function FitnessTargetCard({ data }: { data: Data["fitnessTarget"] }) {
           <span className="rounded-2xl bg-amber-300/15 p-3 text-amber-200"><Trophy /></span>
         </div>
         {!data.rewardClaimed && <p className="mt-5 text-sm font-bold text-amber-200">+50 Points for completing your first BMI assessment</p>}
-        <button onClick={() => location.assign("/set-target")} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-zenith-400 px-5 font-bold text-black">
+        <Link href="/set-target" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-zenith-400 px-5 font-bold text-black">
           Set Target <ArrowRight size={18} />
-        </button>
+        </Link>
       </article>
     );
   }

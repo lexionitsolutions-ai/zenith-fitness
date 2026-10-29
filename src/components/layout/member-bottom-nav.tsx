@@ -18,7 +18,7 @@ export function MemberBottomNav({ active }: { active: MemberNavKey }) {
         const Icon = item.icon;
         const on = item.key === active;
         return (
-          <Link key={item.key} href={item.href} prefetch={false} aria-current={on ? "page" : undefined} className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center rounded-xl px-1 text-[11px] transition ${on ? "bg-zenith-500/20 text-zenith-400" : "text-white/55 hover:bg-white/5 hover:text-white"}`}>
+          <Link key={item.key} href={item.href} aria-current={on ? "page" : undefined} className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center rounded-xl px-1 text-[11px] transition ${on ? "bg-zenith-500/20 text-zenith-400" : "text-white/55 hover:bg-white/5 hover:text-white"}`}>
             <Icon size={19} />
             <span className="mt-0.5 whitespace-nowrap">{item.label}</span>
           </Link>

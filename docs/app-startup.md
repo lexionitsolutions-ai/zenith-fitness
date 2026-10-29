@@ -15,7 +15,10 @@ of `connection_limit=1` is overridden for PgBouncer runtime traffic; it remains
 appropriate for scripts and the separate migration connection. No database
 privilege changes or DDL are part of this fix.
 
-Member and staff bottom navigation disables speculative prefetch. A shared
+Member navigation now uses Next.js automatic prefetch with route loading
+boundaries. Only the loading shell is prefetched for dynamic member tabs;
+full database-backed pages are not force-prefetched. Staff navigation also uses
+automatic prefetch. A shared
 five-second gate coalesces resume/focus/streak route refreshes. Membership polling
 coalesces in-flight requests, and announcements use the server-rendered data
 instead of immediately fetching it a second time. The BMI reminder is shown in
@@ -28,6 +31,27 @@ per minute when online; blocked storage disables automatic reload rather than
 creating a loop. Optional browser storage is guarded against SecurityError and
 QuotaExceededError. Zee's initial rendering avoids Array.findLastIndex for older
 Android WebViews.
+
+The home middleware redirects from the signed session without opening a database
+connection; the destination still verifies account access against the database.
+Session reads run in parallel and are deduplicated within each server render.
+Dashboard target/streak reads and independent points queries also run in parallel.
+Dashboard announcements stream separately so images cannot hold up membership
+content. Each main member tab has a loading shell with usable navigation, and
+the native notification bridge is downloaded only on native platforms.
+
+Read-only HTTP timing checks:
+
+```powershell
+node scripts/benchmark-app.cjs --output=output/speed-local.json
+node scripts/benchmark-app.cjs --public --origin=https://zenith-fitness-theta.vercel.app --output=output/speed-public.json
+```
+
+The default check uses one existing active member and a temporary signed session
+from the existing local environment. It never prints tokens or member responses.
+It performs only GET requests and reports the first request and median of three
+warmed requests. Public mode does not authenticate. These are HTTP timings,
+including full response streaming, rather than browser paint/hydration metrics.
 
 Checks:
 

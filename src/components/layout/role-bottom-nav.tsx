@@ -56,7 +56,6 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           <Link
             key={item.href}
             href={item.href}
-            prefetch={false}
             className={`flex min-h-12 min-w-[58px] flex-1 flex-col items-center justify-center rounded-xl px-1 text-[10px] sm:text-[11px] ${active ? "bg-zenith-500/20 text-zenith-400" : "text-white/55"}`}
           >
             <Icon size={19} />

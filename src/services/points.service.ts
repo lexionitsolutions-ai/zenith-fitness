@@ -135,27 +135,28 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
 
   const monthStart = startOfIndiaMonth(now);
   const nextMonthStart = startOfNextMonth(monthStart);
-  const transactions = await prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 });
-  const targets = await prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } });
-  const sums = await prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } });
-  const rankedMembers = await prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: [{ _sum: { points: "desc" } }, { memberId: "asc" }] });
+  const [transactions, targets, sums, rankedMembers, monthlyLeaders, streakStatus] = await Promise.all([
+    prisma.pointTransaction.findMany({ where: { memberId }, orderBy: { createdAt: "desc" }, take: 30 }),
+    prisma.memberTarget.findMany({ where: { memberId }, orderBy: { createdAt: "desc" } }),
+    prisma.pointTransaction.aggregate({ where: { memberId }, _sum: { points: true } }),
+    prisma.pointTransaction.groupBy({ by: ["memberId"], _sum: { points: true }, orderBy: [{ _sum: { points: "desc" } }, { memberId: "asc" }] }),
+    prisma.pointTransaction.groupBy({
+      by: ["memberId"],
+      where: { transactionType: "DAILY_VISIT", businessDate: { gte: monthStart, lt: nextMonthStart } },
+      _sum: { points: true },
+      _count: { id: true },
+      orderBy: [{ _sum: { points: "desc" } }, { _count: { id: "desc" } }, { memberId: "asc" }],
+    }),
+    getDailyVisitStreakStatus(memberId, now),
+  ]);
   const leaders = rankedMembers;
   const memberRankIndex = rankedMembers.findIndex((leader) => leader.memberId === memberId);
   const currentMemberRank = memberRankIndex >= 0 ? memberRankIndex + 1 : null;
-  const monthlyLeaders = await prisma.pointTransaction.groupBy({
-    by: ["memberId"],
-    where: { transactionType: "DAILY_VISIT", businessDate: { gte: monthStart, lt: nextMonthStart } },
-    _sum: { points: true },
-    _count: { id: true },
-    orderBy: [{ _sum: { points: "desc" } }, { _count: { id: "desc" } }, { memberId: "asc" }],
-  });
   const leaderMembers = await prisma.member.findMany({
     where: { id: { in: [...new Set([...leaders.map((leader) => leader.memberId), ...monthlyLeaders.map((leader) => leader.memberId)])] } },
     select: { id: true, fullName: true, admissionId: true },
   });
   const byId = new Map(leaderMembers.map((leaderMember) => [leaderMember.id, leaderMember]));
-  const streakStatus = await getDailyVisitStreakStatus(memberId, now);
-
   return {
     member,
     pointsBalance: sums._sum.points ?? 0,

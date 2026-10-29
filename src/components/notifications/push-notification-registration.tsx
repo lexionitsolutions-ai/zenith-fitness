@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { safeLocalStorage } from "@/lib/browser-storage";
 import { Capacitor } from "@capacitor/core";
-import { PushNotifications, type Token } from "@capacitor/push-notifications";
+import type { Token } from "@capacitor/push-notifications";
 
 const registeredTokenKey = "zenith.pushToken";
 const androidChannelId = "zenith_updates";
@@ -11,6 +11,7 @@ const androidChannelId = "zenith_updates";
 async function ensureAndroidNotificationChannel() {
   if (Capacitor.getPlatform() !== "android") return;
 
+  const { PushNotifications } = await import("@capacitor/push-notifications");
   await PushNotifications.createChannel({
     id: androidChannelId,
     name: "Zenith Updates",
@@ -60,6 +61,9 @@ export function PushNotificationRegistration() {
     let active = true;
 
     async function register() {
+      // Web users never download the native notification bridge.
+      const { PushNotifications } = await import("@capacitor/push-notifications");
+      if (!active) return;
       const permissions = await PushNotifications.requestPermissions();
       if (!active) return;
       if (permissions.receive !== "granted") {
@@ -93,7 +97,8 @@ export function PushNotificationRegistration() {
     let cleanupListeners: (() => void) | undefined;
     void register()
       .then((cleanup) => {
-        cleanupListeners = cleanup;
+        if (!active) cleanup?.();
+        else cleanupListeners = cleanup;
       })
       .catch(console.error);
 
