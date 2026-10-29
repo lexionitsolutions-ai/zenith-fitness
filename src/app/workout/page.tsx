@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const session = await getSession();
-  if (!session?.memberId) redirect("/login");
+  if (!session || session.role !== "MEMBER") redirect("/login");
   const workout = await getActiveWorkout(session.userId);
   return <>
     <div className="app-topbar border-b border-white/10"><div className="safe-x mx-auto flex max-w-5xl items-center px-4 py-3 sm:px-8"><ZenithLogo compact /></div></div>

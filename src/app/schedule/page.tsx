@@ -6,7 +6,7 @@ import { ArrowLeft, CalendarDays, Clock } from "lucide-react";
 import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 
 export default async function Page() {
-  if (!(await getSession())?.memberId) redirect("/login");
+  if (!(await getSession())?.userId) redirect("/login");
   const schedule = await getScheduleSessions();
   const next = getNextScheduleSession(schedule);
   const groups = [1, 2, 3, 4, 5, 6].map((day) => ({ day, sessions: schedule.filter((x) => x.day === day) })).filter((group) => group.sessions.length);

@@ -3,6 +3,7 @@
 import { AlertTriangle, ArrowRight, Dumbbell, IndianRupee, TrendingDown, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 import { unregisterPushNotifications } from "@/components/notifications/push-notification-registration";
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
 import { ZeeStreakCard } from "@/components/dashboard/zee-streak-card";
@@ -103,8 +104,8 @@ export function Dashboard({ data }: { data: Data }) {
       <section className="mt-8 grid gap-4 md:grid-cols-2">
         <article className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zenith-500 to-emerald-800 p-6 shadow-glow">
           <Dumbbell className="absolute right-5 top-5 text-white/25" size={48} />
-          <p className="text-xs font-bold uppercase tracking-widest text-white/70">{membership?.status ?? "No membership"}</p>
-          <h2 className="mt-2 text-3xl font-black">{membership?.planName ?? "Visit the front desk"}</h2>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/70">{membership?.status ?? "No Active Plan"}</p>
+          <h2 className="mt-2 text-3xl font-black">{membership?.planName ?? "No Active Plan"}</h2>
           <p className="mt-1 text-white/70">{membership?.category ?? "No plan on record"}</p>
           <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/20 pt-5 text-sm">
             <div>
@@ -121,6 +122,7 @@ export function Dashboard({ data }: { data: Data }) {
               <strong className="text-2xl">{Math.max(0, membership.daysRemaining)}</strong> days remaining
             </p>
           )}
+          <Link href="/membership" className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 font-bold text-black">{membership ? "Renew Membership" : "Buy Membership"}<ArrowRight size={18}/></Link>
         </article>
 
         <ZeeStreakCard memberName={data.member.name} currentStreak={data.currentStreak} streakExpiresAt={data.streakExpiresAt} streakExpiresSoon={data.streakExpiresSoon} streakBusinessDate={data.streakBusinessDate} />

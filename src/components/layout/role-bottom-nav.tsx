@@ -27,6 +27,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           { href: "/admin/announcements", label: "Posts", icon: MessageSquare },
           { href: "/admin/points", label: "Ledger", icon: ScrollText },
           { href: "/admin/members", label: "Members", icon: UserRoundCog },
+          { href: "/admin/memberships", label: "Approvals", icon: ScrollText },
           { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
           { href: "/admin/notifications", label: "Notify", icon: Bell },
           { href: "/admin/staff", label: "Staff", icon: Users },
@@ -47,7 +48,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
   }
 
   return (
-    <nav className="fixed bottom-3 left-1/2 z-40 flex w-[calc(100%-24px)] max-w-xl -translate-x-1/2 items-stretch rounded-2xl border border-white/10 bg-[#10201b]/95 p-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur">
+    <nav className="fixed bottom-3 left-1/2 z-40 flex w-[calc(100%-24px)] max-w-3xl -translate-x-1/2 items-stretch overflow-x-auto rounded-2xl border border-white/10 bg-[#10201b]/95 p-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur">
       {items.map((item) => {
         const Icon = item.icon;
         const active = path === item.href;
@@ -55,7 +56,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center rounded-xl px-1 text-[10px] sm:text-[11px] ${active ? "bg-zenith-500/20 text-zenith-400" : "text-white/55"}`}
+            className={`flex min-h-12 min-w-[58px] flex-1 flex-col items-center justify-center rounded-xl px-1 text-[10px] sm:text-[11px] ${active ? "bg-zenith-500/20 text-zenith-400" : "text-white/55"}`}
           >
             <Icon size={19} />
             <span>{item.label}</span>

@@ -5,7 +5,7 @@ import { completeExercise, setCurrentDay } from "@/services/workout.service";
 export async function POST(request: Request) {
   try {
     const session = await getSession();
-    if (!session?.memberId) throw new AppError("UNAUTHORIZED", "Authentication required.", 401);
+    if (!session || session.role !== "MEMBER") throw new AppError("UNAUTHORIZED", "Authentication required.", 401);
     await completeExercise(session.userId, await request.json());
     return Response.json({ success: true });
   } catch (error) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await getSession();
-    if (!session?.memberId) throw new AppError("UNAUTHORIZED", "Authentication required.", 401);
+    if (!session || session.role !== "MEMBER") throw new AppError("UNAUTHORIZED", "Authentication required.", 401);
     const body = await request.json();
     await setCurrentDay(session.userId, Number(body.dayNumber));
     return Response.json({ success: true });

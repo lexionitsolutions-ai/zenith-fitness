@@ -8,10 +8,17 @@ import { AnnouncementWindow } from "@/components/dashboard/announcement-window";
 import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { ZenithLogo } from "@/components/brand/zenith-logo";
 import { MembershipRefresh } from "@/components/dashboard/membership-refresh";
+import { purchaseOverview } from "@/services/membership-purchase.service";
+import { GuestDashboard } from "@/components/membership/guest-dashboard";
 
 export default async function Page() {
   const session = await getSession();
-  if (!session?.memberId) redirect("/login");
+  if (!session) redirect("/login");
+  if (!session.memberId && session.role === "MEMBER") {
+    const [overview, notices] = await Promise.all([purchaseOverview(session.userId), getDashboardAnnouncements()]);
+    return <><AnnouncementWindow data={notices}/><GuestDashboard data={overview}/></>;
+  }
+  if (!session.memberId) redirect("/login");
 
   try {
     const [dashboard, notices] = await Promise.all([getDashboard(session.memberId), getDashboardAnnouncements()]);

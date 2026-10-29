@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page({ params }: { params: Promise<{ dayNumber: string }> }) {
   const session = await getSession();
-  if (!session?.memberId) redirect("/login");
+  if (!session || session.role !== "MEMBER") redirect("/login");
   const dayNumber = Number((await params).dayNumber);
   const data = await getWorkoutDay(session.userId, dayNumber);
   return <><WorkoutDayView day={data.day} /><MemberBottomNav active="workout" /></>;

@@ -8,6 +8,6 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const session = await getSession();
-  if (!session?.memberId) redirect("/login");
+  if (!session || session.role !== "MEMBER") redirect("/login");
   return <><HistoryView items={await getWorkoutHistory(session.userId)} /><MemberBottomNav active="workout" /></>;
 }

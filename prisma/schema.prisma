@@ -209,6 +209,45 @@ model User {
   notificationDeliveries   NotificationDelivery[]
   passwordResetRequests    PasswordResetRequest[] @relation("PasswordResetMember")
   handledPasswordResets    PasswordResetRequest[] @relation("PasswordResetHandledBy")
+  applicantProfile         ApplicantProfile?
+  membershipOrders         MembershipOrder[]
+}
+
+// App accounts exist independently of a gym admission or attendance QR.
+model ApplicantProfile {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gender    String
+  address   String?
+  birthDate DateTime? @db.Date
+}
+
+model MembershipOrder {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  user          User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  kind          String
+  planCode      String
+  planName      String
+  durationMonths Int
+  price         Int
+  pointsUsed    Int      @default(0)
+  amountDue     Int
+  status        String   @default("AWAITING_PAYMENT")
+  utr           String?
+  reportedAmount Int?
+  paymentApp    String?
+  reviewNote    String?
+  reviewedById  String?  @db.Uuid
+  reviewedAt    DateTime?
+  membershipId  String?  @unique @db.Uuid
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@index([utr])
+  @@map("AppMembershipPurchase")
 }
 
 model AppSessionAlias {
