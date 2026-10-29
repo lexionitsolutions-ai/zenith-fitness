@@ -2,11 +2,12 @@
 
 import { ChevronLeft, ChevronRight, Flame, Instagram, LockKeyhole, Sparkles, X } from "lucide-react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { getStreakAward } from "@/lib/utils/streak-awards";
 import { refreshCurrentRoute } from "@/lib/route-refresh";
-import { StreakStoryDialog } from "@/components/dashboard/streak-story-dialog";
+const StreakStoryDialog = dynamic(() => import("@/components/dashboard/streak-story-dialog").then(module => module.StreakStoryDialog));
 import { getNextIndiaMidnight, getZeeBusinessDate, getZeeLine, getZeeProgress, zeeStages, type ZeeStage } from "@/lib/utils/zee";
 
 export type ZeeStreakProps = {

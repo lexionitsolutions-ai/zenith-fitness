@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/database/prisma";
+import { Prisma } from "@prisma/client";
 
 function indiaDateParts(now: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -42,17 +43,17 @@ function birthdayLabel(birthDate: Date) {
 
 export async function getBirthdayAnnouncementMembers(now = new Date()) {
   const birthdayKeys = indiaWindowBirthdayKeys(now);
-  const members = await prisma.member.findMany({
-    where: { birthDate: { not: null } },
-    select: {
-      id: true,
-      fullName: true,
-      admissionId: true,
-      mobileNumber: true,
-      birthDate: true,
-    },
-    orderBy: { fullName: "asc" },
-  });
+  // Return only the three-day window instead of transferring every member.
+  const members = await prisma.$queryRaw<{
+    id: string; fullName: string; admissionId: string;
+    mobileNumber: string | null; birthDate: Date;
+  }[]>`
+    SELECT id, "fullName", "admissionId", "mobileNumber", "birthDate"
+    FROM "Member"
+    WHERE "birthDate" IS NOT NULL
+      AND to_char("birthDate", 'MM-DD') IN (${Prisma.join([...birthdayKeys])})
+    ORDER BY "fullName" ASC
+  `;
 
   return members
     .filter((member) => {

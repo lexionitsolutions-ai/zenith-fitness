@@ -4,15 +4,13 @@ import { prisma } from "@/lib/database/prisma";
 
 vi.mock("@/lib/database/prisma", () => ({
   prisma: {
-    member: {
-      findMany: vi.fn(),
-    },
+    $queryRaw: vi.fn(),
   },
 }));
 
 describe("birthday announcements", () => {
   it("shows members whose birthdays are yesterday, today, or tomorrow in India time", async () => {
-    vi.mocked(prisma.member.findMany).mockResolvedValue([
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([
       {
         id: "1",
         fullName: "Yesterday Member",
@@ -41,7 +39,7 @@ describe("birthday announcements", () => {
         mobileNumber: "9000000004",
         birthDate: new Date("1990-10-02T00:00:00.000Z"),
       },
-    ] as Awaited<ReturnType<typeof prisma.member.findMany>>);
+    ] as never);
 
     const members = await getBirthdayAnnouncementMembers(new Date("2026-09-30T08:00:00.000Z"));
 
@@ -52,4 +50,14 @@ describe("birthday announcements", () => {
     ]);
     expect(members.map((member) => member.birthDate)).toEqual(["29 Sept", "30 Sept", "01 Oct"]);
   });
+  it("handles the India-time year boundary", async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([
+      { id: "dec", fullName: "December birthday", admissionId: "ZF-1", mobileNumber: null, birthDate: new Date("1990-12-31T00:00:00Z") },
+      { id: "jan", fullName: "January birthday", admissionId: "ZF-2", mobileNumber: null, birthDate: new Date("1990-01-01T00:00:00Z") },
+      { id: "outside", fullName: "Outside", admissionId: "ZF-3", mobileNumber: null, birthDate: new Date("1990-01-03T00:00:00Z") },
+    ]);
+    const members = await getBirthdayAnnouncementMembers(new Date("2026-12-31T20:00:00Z"));
+    expect(members.map(member => member.id)).toEqual(["dec", "jan"]);
+  });
+
 });

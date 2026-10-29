@@ -15,18 +15,28 @@ export const getSession = cache(async (): Promise<Session | null> => {
     session = (await jwtVerify(token, key())).payload as unknown as Session;
   } catch { return null; }
 
-  const [alias, user] = await Promise.all([
-    prisma.appSessionAlias.findUnique({
-      where: { previousUserId: session.userId },
-      include: { user: { select: { id: true, memberId: true, role: true, isActive: true } } },
-    }),
-    prisma.user.findUnique({ where: { id: session.userId }, select: { memberId: true, role: true, isActive: true } }),
-  ]);
+  // Resolve the alias and read the current account in one round trip. Query
+  // parameters stay bound by Prisma; account access is checked on every request.
+  const [account] = await prisma.$queryRaw<{
+    previousUserId: string | null;
+    previousMemberId: string | null;
+    id: string | null;
+    memberId: string | null;
+    role: Role | null;
+    isActive: boolean | null;
+  }[]>`
+    SELECT a."previousUserId", a."previousMemberId",
+      u.id, u."memberId", u.role, u."isActive"
+    FROM (SELECT ${session.userId}::uuid AS id) AS s
+    LEFT JOIN "AppSessionAlias" AS a ON a."previousUserId" = s.id
+    LEFT JOIN "User" AS u ON u.id = COALESCE(a."userId", s.id)
+  `;
+  if (!account?.id || !account.role || !account.isActive) return null;
+  const user = { id: account.id, memberId: account.memberId, role: account.role, isActive: account.isActive };
+  const alias = account.previousUserId ? { previousMemberId: account.previousMemberId, user } : null;
   const resolved = resolveSessionAlias(session, alias);
   if (!resolved) return null;
-  // Alias resolution already fetched and validated the current user.
-  if (alias) return resolved;
-  if (!user?.isActive || user.role !== resolved.role) return null;
+  if (user.role !== resolved.role) return null;
   return { ...resolved, memberId: user.memberId };
 });
 export async function clearSession(){(await cookies()).delete("zenith_session")}

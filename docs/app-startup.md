@@ -34,17 +34,30 @@ Android WebViews.
 
 The home middleware redirects from the signed session without opening a database
 connection; the destination still verifies account access against the database.
-Session reads run in parallel and are deduplicated within each server render.
-Dashboard target/streak reads and independent points queries also run in parallel.
+Session alias and active-account validation use one parameterized SQL join and
+are deduplicated within each server render. Dashboard member/target/streak reads
+and independent points queries run in parallel. Fitness-target selection prefers
+active over completed goals in one ordered query, alongside the reward lookup.
 Dashboard announcements stream separately so images cannot hold up membership
 content. Each main member tab has a loading shell with usable navigation, and
 the native notification bridge is downloaded only on native platforms.
+The guest membership shop and streak-story dialog load in separate chunks; an
+existing member's initial dashboard does not download either feature.
+
+Staff and admin birthday reminders stream independently of their workspace and
+navigation. The birthday query returns only the India-time three-day window.
+Trainer summaries fetch only the latest BMI assessment and render 30 rows at a
+time; search still covers the full list. Member lookup aggregates the points
+balance in PostgreSQL instead of downloading ledger rows, and omits empty phone
+alternatives so admission-ID searches cannot accidentally match another member.
 
 Read-only HTTP timing checks:
 
 ```powershell
 node scripts/benchmark-app.cjs --output=output/speed-local.json
 node scripts/benchmark-app.cjs --public --origin=https://zenith-fitness-theta.vercel.app --output=output/speed-public.json
+node scripts/compare-startup-performance.cjs
+node scripts/benchmark-app.cjs --staff --output=output/speed-staff.json
 ```
 
 The default check uses one existing active member and a temporary signed session
@@ -52,6 +65,9 @@ from the existing local environment. It never prints tokens or member responses.
 It performs only GET requests and reports the first request and median of three
 warmed requests. Public mode does not authenticate. These are HTTP timings,
 including full response streaming, rather than browser paint/hydration metrics.
+The comparison script alternates the working-tree dashboard service with `HEAD`
+using the same member, clock, and pool. It checks identical business results and
+reports medians from three paired samples; temporary baseline sources are removed.
 
 Checks:
 

@@ -11,7 +11,7 @@ import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { ZenithLogo } from "@/components/brand/zenith-logo";
 import { MembershipRefresh } from "@/components/dashboard/membership-refresh";
 import { purchaseOverview } from "@/services/membership-purchase.service";
-import { GuestDashboard } from "@/components/membership/guest-dashboard";
+import { GuestDashboardLoader } from "@/components/membership/guest-dashboard-loader";
 
 async function Notices() {
   // Promotional images must not delay membership details or navigation.
@@ -32,7 +32,7 @@ function DashboardPlaceholder() {
 }
 
 async function Guest({ userId }: { userId: string }) {
-  return <GuestDashboard data={await purchaseOverview(userId)} />;
+  return <GuestDashboardLoader data={await purchaseOverview(userId)} />;
 }
 
 export default async function Page() {

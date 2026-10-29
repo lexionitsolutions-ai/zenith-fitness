@@ -7,15 +7,14 @@ vi.mock("react", () => ({ cache: (fn: unknown) => fn }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => ({ value: "test-token" }) }) }));
 vi.mock("jose", () => ({ jwtVerify: vi.fn(), SignJWT: vi.fn() }));
 vi.mock("@/lib/database/prisma", () => ({ prisma: {
-  appSessionAlias: { findUnique: vi.fn() }, user: { findUnique: vi.fn() },
+  $queryRaw: vi.fn(),
 } }));
 
 const session = { userId: "old-user", memberId: "old-member", role: "MEMBER" };
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(jwtVerify).mockResolvedValue({ payload: session } as never);
-  vi.mocked(prisma.appSessionAlias.findUnique).mockResolvedValue(null);
-  vi.mocked(prisma.user.findUnique).mockResolvedValue({ memberId: "current-member", role: "MEMBER", isActive: true } as never);
+  vi.mocked(prisma.$queryRaw).mockResolvedValue([{ previousUserId: null, previousMemberId: null, id: "old-user", memberId: "current-member", role: "MEMBER", isActive: true }]);
 });
 
 describe("session account validation", () => {
@@ -23,18 +22,25 @@ describe("session account validation", () => {
     expect(await getSession()).toEqual({ ...session, memberId: "current-member" });
   });
   it.each([null, { memberId: "old-member", role: "MEMBER", isActive: false }, { memberId: "old-member", role: "STAFF", isActive: true }])("rejects missing, disabled or changed accounts", async (user) => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(user as never);
+    vi.mocked(prisma.$queryRaw).mockResolvedValue(user ? [{ id: "old-user", previousUserId: null, ...user }] : []);
     expect(await getSession()).toBeNull();
   });
   it("uses the validated alias when the original user no longer exists", async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
-    vi.mocked(prisma.appSessionAlias.findUnique).mockResolvedValue({ previousMemberId: "old-member", user: { id: "new-user", memberId: "new-member", role: "MEMBER", isActive: true } } as never);
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ previousUserId: "old-user", previousMemberId: "old-member", id: "new-user", memberId: "new-member", role: "MEMBER", isActive: true }]);
     expect(await getSession()).toEqual({ userId: "new-user", memberId: "new-member", role: "MEMBER" });
-    expect(prisma.user.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+  it("rejects an alias belonging to another member", async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ previousUserId: "old-user", previousMemberId: "different-member", id: "new-user", memberId: "new-member", role: "MEMBER", isActive: true }]);
+    expect(await getSession()).toBeNull();
+  });
+  it("rejects an alias whose current account was deleted", async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ previousUserId: "old-user", previousMemberId: "old-member", id: null, memberId: null, role: null, isActive: null }]);
+    expect(await getSession()).toBeNull();
   });
   it("rejects invalid tokens without querying accounts", async () => {
     vi.mocked(jwtVerify).mockRejectedValue(new Error("Invalid signature"));
     expect(await getSession()).toBeNull();
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 });

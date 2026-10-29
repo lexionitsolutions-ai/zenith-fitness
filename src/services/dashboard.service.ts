@@ -8,7 +8,13 @@ import { getDailyVisitStreakStatus } from "@/services/points.service";
 import { authoritativeMemberships } from "@/lib/utils/management-memberships";
 
 export async function getDashboard(memberId: string, now = new Date()) {
-  const member = await prisma.member.findUnique({ where: { id: memberId }, include: { memberships: { include: { plan: true } } } });
+  const [memberResult, targetResult, streakResult] = await Promise.allSettled([
+    prisma.member.findUnique({ where: { id: memberId }, include: { memberships: { include: { plan: true } } } }),
+    getFitnessTarget(memberId),
+    getDailyVisitStreakStatus(memberId, now),
+  ]);
+  if (memberResult.status === "rejected") throw memberResult.reason;
+  const member = memberResult.value;
   if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member profile not found.", 404);
 
   const all = authoritativeMemberships(member).map((membership) => ({ ...membership, currentStatus: calculateMembershipStatus(membership.startDate, membership.endDate, now) }));
@@ -27,18 +33,15 @@ export async function getDashboard(memberId: string, now = new Date()) {
   if (selected?.paymentStatus === "REVIEW_REQUIRED") warnings.push("Payment history needs reconciliation by the front desk.");
   if (completion < 100) alerts.push({ type: "PROFILE_INCOMPLETE", severity: "info", title: "Complete your profile", message: "Fill the remaining safe profile details below." });
 
-  const [fitnessTarget, streakStatus] = await Promise.all([
-    getFitnessTarget(memberId).catch((error) => {
-      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
-      warnings.push("Fitness target tables are not migrated yet.");
-      return { target: null, rewardClaimed: false };
-    }),
-    getDailyVisitStreakStatus(memberId, now).catch((error) => {
-      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
-      warnings.push("Point tables are not migrated yet.");
-      return { currentStreak: 0, streakExpiresAt: null, streakExpiresSoon: false };
-    }),
-  ]);
+  function optionalResult<T>(result: PromiseSettledResult<T>, fallback: T, warning: string): T {
+    if (result.status === "fulfilled") return result.value;
+    const error = result.reason;
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021")) throw error;
+    warnings.push(warning);
+    return fallback;
+  }
+  const fitnessTarget = optionalResult(targetResult, { target: null, rewardClaimed: false }, "Fitness target tables are not migrated yet.");
+  const streakStatus = optionalResult(streakResult, { currentStreak: 0, streakExpiresAt: null, streakExpiresSoon: false }, "Point tables are not migrated yet.");
 
   return {
     member: {

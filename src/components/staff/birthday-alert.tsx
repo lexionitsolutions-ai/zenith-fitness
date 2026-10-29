@@ -2,7 +2,10 @@ import { Cake } from "lucide-react";
 import { getBirthdayAnnouncementMembers } from "@/services/birthday.service";
 
 export async function BirthdayAlert() {
-  const members = await getBirthdayAnnouncementMembers();
+  const members = await getBirthdayAnnouncementMembers().catch((error) => {
+    console.error("Birthday reminders could not load", error);
+    return [];
+  });
   if (!members.length) return null;
 
   return (

@@ -18,7 +18,7 @@ export async function GET(req: Request) {
       where: {
         OR: [
           { admissionId: admissionId ?? query },
-          { mobileNumber: digits.length >= 10 ? { endsWith: digits.slice(-10) } : undefined },
+          ...(digits.length >= 10 ? [{ mobileNumber: { endsWith: digits.slice(-10) } }] : []),
         ],
       },
       select: {
@@ -29,15 +29,15 @@ export async function GET(req: Request) {
         targets: {
           where: { status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
           orderBy: { dueDate: "asc" },
+          select: { id: true, title: true, dueDate: true, rewardPoints: true },
         },
-        pointTransactions: { select: { points: true } },
       },
     });
     if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
-    const { pointTransactions, ...profile } = member;
+    const balance = await prisma.pointTransaction.aggregate({ where: { memberId: member.id }, _sum: { points: true } });
     return Response.json({
       success: true,
-      data: { ...profile, pointsBalance: pointTransactions.reduce((sum, row) => sum + row.points, 0) },
+      data: { ...member, pointsBalance: balance._sum.points ?? 0 },
     });
   } catch (error) {
     return apiError(error);

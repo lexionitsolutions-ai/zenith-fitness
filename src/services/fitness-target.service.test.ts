@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { addBmiAssessment, getFitnessTarget } from "./fitness-target.service";
+import { addBmiAssessment, getFitnessTarget, getStaffMemberProgressList } from "./fitness-target.service";
 
 const database = vi.hoisted(() => ({
-  memberFitnessTarget: { findFirst: vi.fn(), update: vi.fn() },
+  memberFitnessTarget: { findFirst: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   bmiAssessment: { create: vi.fn() },
   pointTransaction: { findUnique: vi.fn(async () => ({ id: "reward" })) },
 }));
@@ -23,13 +23,13 @@ beforeEach(() => { vi.clearAllMocks(); });
 
 describe("BMI target history", () => {
   it("shows the completed target and both BMI reports after the 45-day follow-up", async () => {
-    database.memberFitnessTarget.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(savedTarget("COMPLETED"));
+    database.memberFitnessTarget.findFirst.mockResolvedValueOnce(savedTarget("COMPLETED"));
     const result = await getFitnessTarget("member");
     expect(result.target).toMatchObject({ id: "saved-target", status: "COMPLETED", bmiDue: false, progress: { visualPercentage: 100 } });
     expect(result.target?.history.map(report => report.assessmentNumber)).toEqual([1, 2]);
     expect(result.target?.baseline.skeletalMuscleMassKg).toBe(32);
     expect(result.target?.latest.skeletalMuscleMassKg).toBe(33);
-    expect(database.memberFitnessTarget.findFirst).toHaveBeenLastCalledWith(expect.objectContaining({ where: { memberId: "member", status: "COMPLETED" }, orderBy: { createdAt: "desc" } }));
+    expect(database.memberFitnessTarget.findFirst).toHaveBeenLastCalledWith(expect.objectContaining({ where: { memberId: "member", status: { in: ["ACTIVE", "COMPLETED"] } }, orderBy: [{ status: "asc" }, { createdAt: "desc" }] }));
   });
 
   it("prefers an active target over an older completed goal", async () => {
@@ -42,12 +42,12 @@ describe("BMI target history", () => {
   it("returns an empty state only when neither an active nor completed target exists", async () => {
     database.memberFitnessTarget.findFirst.mockResolvedValue(null);
     expect(await getFitnessTarget("member")).toEqual({ target: null, rewardClaimed: true });
-    expect(database.memberFitnessTarget.findFirst).toHaveBeenCalledTimes(2);
+    expect(database.memberFitnessTarget.findFirst).toHaveBeenCalledTimes(1);
   });
 
   it("returns the saved follow-up and baseline when the new report completes a target", async () => {
     const target = savedTarget();
-    database.memberFitnessTarget.findFirst.mockImplementation(async ({ where }: { where: { status: string } }) => target.status === where.status ? target : null);
+    database.memberFitnessTarget.findFirst.mockImplementation(async ({ where }: { where: { status: string | { in: string[] } } }) => (typeof where.status === "string" ? target.status === where.status : where.status.in.includes(target.status)) ? target : null);
     database.bmiAssessment.create.mockImplementation(async ({ data }) => {
       target.bmiAssessments.unshift({ ...data, id: "followup" });
     });
@@ -60,5 +60,17 @@ describe("BMI target history", () => {
     expect(result.target?.history).toHaveLength(2);
     expect(result.target?.baseline.id).toBe("baseline");
     expect(result.target?.bmiDue).toBe(false);
+  });
+});
+
+describe("staff progress summary", () => {
+  it("uses saved goal baselines and the latest BMI without needing report history", async () => {
+    database.memberFitnessTarget.findMany.mockResolvedValue([{ ...savedTarget(), member: { admissionId: "ZF-12", fullName: "Member" }, bmiAssessments: [{ assessmentDate: new Date("2026-10-24"), weightKg: 72.5, skeletalMuscleMassKg: 33 }] }]);
+    const rows = await getStaffMemberProgressList();
+    expect(rows).toEqual([expect.objectContaining({ admissionId: "ZF-12", progress: 100, latestAssessmentDate: "2026-10-24" })]);
+  });
+  it("omits goals that have no BMI report", async () => {
+    database.memberFitnessTarget.findMany.mockResolvedValue([{ ...savedTarget(), member: { admissionId: "ZF-12", fullName: "Member" }, bmiAssessments: [] }]);
+    expect(await getStaffMemberProgressList()).toEqual([]);
   });
 });

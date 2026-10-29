@@ -1,19 +1,21 @@
 "use client";
 
 import { Search, TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 
 type ProgressMember = Awaited<ReturnType<typeof import("@/services/fitness-target.service").getStaffMemberProgressList>>[number];
 
 export function StaffProgressList({ members }: { members: ProgressMember[] }) {
   const [query, setQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(30);
+  const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
-    const value = query.trim().toLowerCase();
+    const value = deferredQuery.trim().toLowerCase();
     if (!value) return members;
     return members.filter((member) =>
       [member.admissionId, member.memberName, member.goal].some((field) => field.toLowerCase().includes(value))
     );
-  }, [members, query]);
+  }, [members, deferredQuery]);
 
   return (
     <main className="mx-auto min-h-dvh max-w-4xl px-5 py-8">
@@ -24,14 +26,14 @@ export function StaffProgressList({ members }: { members: ProgressMember[] }) {
         <Search className="shrink-0 text-white/45" size={19} />
         <input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => { setQuery(event.target.value); setVisibleCount(30); }}
           placeholder="Search member name, ID, or goal"
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-white/35"
         />
       </label>
 
-      <section className="mt-5 space-y-3">
-        {filtered.length ? filtered.map((member) => (
+      <section className="mt-5 space-y-3" aria-busy={query !== deferredQuery}>
+        {filtered.length ? filtered.slice(0, visibleCount).map((member) => (
           <article key={member.id} className="rounded-2xl border border-white/10 bg-white/[.045] p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -56,6 +58,7 @@ export function StaffProgressList({ members }: { members: ProgressMember[] }) {
           </article>
         )}
       </section>
+      {filtered.length > visibleCount && <button type="button" onClick={() => setVisibleCount(count => count + 30)} className="mt-5 min-h-12 w-full rounded-xl bg-white/10 font-bold">Show more members ({filtered.length - visibleCount} remaining)</button>}
     </main>
   );
 }

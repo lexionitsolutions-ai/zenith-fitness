@@ -115,16 +115,18 @@ export async function getStaffMemberProgressList() {
     where: { status: "ACTIVE" },
     include: {
       member: { select: { admissionId: true, fullName: true } },
-      baselineBmiAssessment: true,
-      bmiAssessments: { orderBy: [{ assessmentDate: "desc" }, { createdAt: "desc" }] },
+      bmiAssessments: {
+        orderBy: [{ assessmentDate: "desc" }, { createdAt: "desc" }],
+        take: 1,
+        select: { assessmentDate: true, weightKg: true, skeletalMuscleMassKg: true },
+      },
     },
   });
 
   return targets
     .flatMap((target) => {
       const latest = target.bmiAssessments[0];
-      const baseline = target.baselineBmiAssessment ?? target.bmiAssessments[target.bmiAssessments.length - 1];
-      if (!latest || !baseline) return [];
+      if (!latest) return [];
       const progress =
         target.goalType === "WEIGHT_LOSS"
           ? calculateWeightLossProgress(Number(target.baselineWeightKg), Number(latest.weightKg), Number(target.targetWeightKg))
@@ -153,12 +155,17 @@ async function hasInitialTargetReward(memberId: string) {
 export async function getFitnessTarget(memberId: string) {
   // Completion must not hide the report that reached the goal or its BMI history.
   // Prefer an active goal, falling back to the most recently completed goal.
-  const target = await findActiveTarget(memberId) ?? await prisma.memberFitnessTarget.findFirst({
-    where: { memberId, status: "COMPLETED" },
-    orderBy: { createdAt: "desc" },
-    include: { baselineBmiAssessment: true, bmiAssessments: { orderBy: [{ assessmentDate: "desc" }, { createdAt: "desc" }] } },
-  });
-  return serialize(target, await hasInitialTargetReward(memberId));
+  const [target, rewardClaimed] = await Promise.all([
+    prisma.memberFitnessTarget.findFirst({
+      where: { memberId, status: { in: ["ACTIVE", "COMPLETED"] } },
+      // PostgreSQL enum order is ACTIVE, COMPLETED, CANCELLED (schema.prisma).
+      // Prefer any active goal, then the newest completed one in one query.
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      include: { baselineBmiAssessment: true, bmiAssessments: { orderBy: [{ assessmentDate: "desc" }, { createdAt: "desc" }] } },
+    }),
+    hasInitialTargetReward(memberId),
+  ]);
+  return serialize(target, rewardClaimed);
 }
 
 export async function getFitnessTargetOrEmpty(memberId: string) {
