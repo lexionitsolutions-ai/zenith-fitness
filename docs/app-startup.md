@@ -1,5 +1,9 @@
 # Mobile startup and reopen reliability
 
+Vercel Functions use Singapore (`sin1`) via `vercel.json` to colocate compute
+with the configured Supabase pooler in `ap-southeast-1`. Static assets continue
+to use Vercel's CDN. Region changes require a new deployment.
+
 Production logs showed Prisma P2024 while rendering `/points`: a function shared
 one Prisma connection between simultaneous requests and exhausted its pool wait.
 Member navigation could prefetch several database-backed pages while dashboard,
