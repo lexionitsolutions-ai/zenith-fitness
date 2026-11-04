@@ -1,7 +1,7 @@
 import { Prisma, TargetStatus } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
-import { hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
+import { DAILY_VISIT_POINTS, hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
 import { getZeeBusinessDate } from "@/lib/utils/zee";
 import { normalizeAdmissionId } from "@/lib/utils/normalization";
 import { appDatabaseObject } from "@/lib/database/app-object";
@@ -87,7 +87,7 @@ export async function awardDailyVisit(qrToken: string, staffUserId: string) {
     const transaction = await prisma.pointTransaction.create({
       data: {
         memberId: member.id,
-        points: 5,
+        points: DAILY_VISIT_POINTS,
         transactionType: "DAILY_VISIT",
         referenceKey: key,
         description: "Daily gym visit",

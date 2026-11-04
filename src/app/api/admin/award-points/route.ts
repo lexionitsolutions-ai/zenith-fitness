@@ -2,15 +2,13 @@ import { z } from "zod";
 import { requireActiveRole } from "@/lib/auth/authorize";
 import { prisma } from "@/lib/database/prisma";
 import { AppError, apiError } from "@/lib/errors";
-import { indiaBusinessDate } from "@/lib/utils/point-rules";
+import { DAILY_VISIT_POINTS, hasActiveMembership, indiaBusinessDate } from "@/lib/utils/point-rules";
 import { normalizeAdmissionId } from "@/lib/utils/normalization";
+import { authoritativeMemberships } from "@/lib/utils/management-memberships";
 
 const awardInput = z.object({
-  batchId: z.string().uuid(),
   memberIds: z.array(z.string().uuid()).min(1).max(200),
-  points: z.number().int().min(1).max(10000),
-  description: z.string().trim().min(3).max(200),
-});
+}).strict();
 
 export async function GET(request: Request) {
   try {
@@ -39,21 +37,25 @@ export async function POST(request: Request) {
     const session = await requireActiveRole(["ADMIN"]);
     const value = awardInput.parse(await request.json());
     const memberIds = [...new Set(value.memberIds)];
-    const businessDate = indiaBusinessDate();
+    const now = new Date();
+    const businessDate = indiaBusinessDate(now);
     const result = await prisma.$transaction(async (tx) => {
-      const count = await tx.member.count({ where: { id: { in: memberIds } } });
-      if (count !== memberIds.length) throw new AppError("MEMBER_NOT_FOUND", "One or more selected members no longer exist. Refresh and select them again.", 404);
-      // A retry of the same batch cannot award the same member twice.
+      const members = await tx.member.findMany({ where: { id: { in: memberIds } }, include: { memberships: true } });
+      if (members.length !== memberIds.length) throw new AppError("MEMBER_NOT_FOUND", "One or more selected members no longer exist. Refresh and select them again.", 404);
+      const ineligible = members.filter(member => !member.qrCodeActive || !hasActiveMembership(authoritativeMemberships(member), now));
+      if (ineligible.length) throw new AppError("MEMBERSHIP_INACTIVE", `Remove members without active attendance access: ${ineligible.map(member => member.admissionId).join(", ")}. No points were awarded.`, 409);
+      // Share the staff scan's unique daily key: photo attendance, retries,
+      // and QR check-ins can only award one daily visit per member in India.
       return tx.pointTransaction.createMany({
         data: memberIds.map(memberId => ({
-          memberId, points: value.points, description: value.description,
-          transactionType: "ADMIN_ADJUSTMENT" as const,
+          memberId, points: DAILY_VISIT_POINTS, description: "Daily attendance verified by admin from photo",
+          transactionType: "DAILY_VISIT" as const,
           awardedByUserId: session.userId, businessDate,
-          referenceKey: `admin-award:${session.userId}:${value.batchId}:${memberId}`,
+          referenceKey: `daily:${memberId}:${businessDate.toISOString().slice(0, 10)}`,
         })),
         skipDuplicates: true,
       });
     });
-    return Response.json({ success: true, data: { awardedCount: result.count, selectedCount: memberIds.length, points: value.points } });
-  } catch (error) { return apiError(error instanceof z.ZodError ? new AppError("INVALID_INPUT", "Select 1 to 200 members, enter 1 to 10,000 whole points, and provide a reason of 3 to 200 characters.") : error); }
+    return Response.json({ success: true, data: { awardedCount: result.count, alreadyAwardedCount: memberIds.length - result.count, selectedCount: memberIds.length, points: DAILY_VISIT_POINTS } });
+  } catch (error) { return apiError(error instanceof z.ZodError ? new AppError("INVALID_INPUT", "Select 1 to 200 members. Only the standard daily attendance points can be awarded.") : error); }
 }

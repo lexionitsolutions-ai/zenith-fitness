@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Gift, Plus, Search, X } from "lucide-react";
+import { Gift, Plus, X } from "lucide-react";
+
+import { DAILY_VISIT_POINTS } from "@/lib/utils/point-rules";
 
 type Member = { id: string; fullName: string; admissionId: string };
 
@@ -10,36 +12,38 @@ export function AwardPoints() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Member[]>([]);
   const [selected, setSelected] = useState<Member[]>([]);
-  const [points, setPoints] = useState("");
-  const [description, setDescription] = useState("");
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const searchVersion = useRef(0);
-  const batchId = useRef<string | null>(null);
+  const [searchError, setSearchError] = useState("");
   const submitting = useRef(false);
 
   function changed() {
-    batchId.current = null;
     setMessage("");
     setError("");
   }
 
-  async function search(event: React.FormEvent) {
-    event.preventDefault();
-    const version = ++searchVersion.current;
-    setSearching(true); setError(""); setSearched(false);
-    try {
-      const response = await fetch(`/api/admin/award-points?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message ?? "Could not search members.");
-      if (version === searchVersion.current) { setResults(result.data); setSearched(true); }
-    } catch (err) {
-      if (version === searchVersion.current) setError(err instanceof Error ? err.message : "Could not search members.");
-    } finally { if (version === searchVersion.current) setSearching(false); }
-  }
+  useEffect(() => {
+    const term = query.trim();
+    const controller = new AbortController();
+    let active = true;
+    setResults([]); setSearched(false); setSearchError("");
+    if (!term) { setSearching(false); return; }
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/admin/award-points?q=${encodeURIComponent(term)}`, { cache: "no-store", signal: controller.signal });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error?.message ?? "Could not search members.");
+        if (active) { setResults(result.data); setSearched(true); }
+      } catch (err) {
+        if (active) setSearchError(err instanceof Error ? err.message : "Could not search members.");
+      } finally { if (active) setSearching(false); }
+    }, 250);
+    return () => { active = false; clearTimeout(timer); controller.abort(); };
+  }, [query]);
 
   async function award(event: React.FormEvent) {
     event.preventDefault();
@@ -47,24 +51,24 @@ export function AwardPoints() {
     submitting.current = true;
     setBusy(true); setError(""); setMessage("");
     try {
-      batchId.current ??= crypto.randomUUID();
       const response = await fetch("/api/admin/award-points", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ batchId: batchId.current, memberIds: selected.map(member => member.id), points: Number(points), description }),
+        body: JSON.stringify({ memberIds: selected.map(member => member.id) }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error?.message ?? "Could not award points. Retry this batch.");
-      setMessage(`${points} points awarded to each of ${selected.length} selected members. The batch is complete.`);
-      setSelected([]); batchId.current = null;
+      const { awardedCount, alreadyAwardedCount, points } = result.data;
+      setMessage(`Daily attendance recorded for ${awardedCount} members (+${points} points each). ${alreadyAwardedCount} members already received today's daily points and were skipped.`);
+      setSelected([]);
     } catch (err) { setError(err instanceof Error ? err.message : "Could not award points. Retry this batch."); }
     finally { setBusy(false); submitting.current = false; }
   }
 
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-5 py-8">
-      <p className="text-sm text-zenith-400">ADMIN REWARDS</p>
+      <p className="text-sm text-zenith-400">ADMIN DAILY ATTENDANCE</p>
       <h1 className="mt-1 flex items-center gap-3 text-3xl font-black"><Gift className="text-zenith-400" /> Award Points</h1>
-      <p className="mt-3 text-sm text-white/60">Search for members and add them one by one. Award the same number of points to everyone in your selected list with one click.</p>
+      <p className="mt-3 text-sm text-white/60">Verify members' Instagram or WhatsApp attendance photos, then add their names below. Record today's attendance for everyone selected in one click.</p>
       <Link href="/admin/points" className="mt-3 inline-flex min-h-11 items-center text-sm text-zenith-300 underline underline-offset-4">View points ledger</Link>
 
       {error && <p role="alert" className="mt-4 rounded-xl bg-red-400/10 p-4 text-sm text-red-200">{error}</p>}
@@ -72,12 +76,12 @@ export function AwardPoints() {
 
       <section className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-5">
         <h2 className="font-bold">Find members</h2>
-        <form onSubmit={search} className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="min-w-0 flex-1 text-sm text-white/65">Name, member ID, or mobile number
-            <input value={query} onChange={event => { setQuery(event.target.value); ++searchVersion.current; setResults([]); setSearched(false); setSearching(false); }} required maxLength={100} disabled={busy} placeholder="e.g. ZF-2 or a member name" className="mt-2 w-full rounded-xl border border-white/15 bg-black/20 p-3 text-white" />
-          </label>
-          <button disabled={searching || busy || !query.trim()} className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-zenith-400 px-4 font-bold text-black disabled:opacity-40"><Search size={18} />{searching ? "Searching..." : "Search"}</button>
-        </form>
+        <label className="mt-4 block text-sm text-white/65">Name, member ID, or mobile number
+          <input value={query} onChange={event => setQuery(event.target.value)} maxLength={100} disabled={busy} autoComplete="off" aria-describedby="member-search-hint" placeholder="Start typing a name, e.g. Sha" className="mt-2 w-full rounded-xl border border-white/15 bg-black/20 p-3 text-white" />
+        </label>
+        <p id="member-search-hint" className="mt-2 text-xs text-white/50">Matching names and member IDs appear as you type. Add each member whose photo you verified.</p>
+        {searching && <p role="status" className="mt-3 text-sm text-white/50">Finding members...</p>}
+        {searchError && <p role="alert" className="mt-3 text-sm text-red-200">{searchError}</p>}
         <ul aria-label="Member search results" className="mt-4 max-h-80 space-y-2 overflow-y-auto">
           {results.map(member => {
             const added = selected.some(item => item.id === member.id);
@@ -98,14 +102,8 @@ export function AwardPoints() {
             {selected.map(member => <li key={member.id} className="flex items-center justify-between gap-3 rounded-xl bg-black/20 p-3"><div><p className="font-bold">{member.fullName}</p><p className="text-sm text-white/50">{member.admissionId}</p></div><button type="button" onClick={() => { changed(); setSelected(current => current.filter(item => item.id !== member.id)); }} aria-label={`Remove ${member.fullName} (${member.admissionId})`} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-white/60"><X size={18} /></button></li>)}
           </ul>
           {!selected.length && <p className="mt-3 text-sm text-white/50">Add members from the search results above.</p>}
-          <label className="mt-5 block text-sm text-white/65">Points per member
-            <input type="number" required min={1} max={10000} step={1} value={points} onChange={event => { changed(); setPoints(event.target.value); }} className="mt-2 w-full rounded-xl border border-white/15 bg-black/20 p-3 text-white" />
-          </label>
-          <label className="mt-4 block text-sm text-white/65">Reason for award
-            <textarea required minLength={3} maxLength={200} value={description} onChange={event => { changed(); setDescription(event.target.value); }} placeholder="e.g. Group challenge completed" className="mt-2 w-full rounded-xl border border-white/15 bg-black/20 p-3 text-white" />
-          </label>
-          <p className="mt-4 text-sm text-white/60">{selected.length} members × {Number(points) || 0} points = {(selected.length * (Number(points) || 0)).toLocaleString("en-IN")} total points</p>
-          <button disabled={!selected.length || !Number.isInteger(Number(points)) || Number(points) < 1 || Number(points) > 10000 || description.trim().length < 3} className="mt-4 min-h-12 w-full rounded-xl bg-zenith-400 px-5 font-bold text-black disabled:opacity-40">{busy ? "Awarding points..." : `Award points to all ${selected.length} members`}</button>
+          <p className="mt-5 rounded-xl bg-zenith-400/10 p-4 text-sm text-zenith-200">Daily attendance: {DAILY_VISIT_POINTS} points per member. Members who already received today's daily points through a QR check-in or photo attendance are skipped automatically. Attendance also counts toward their streak.</p>
+          <button disabled={!selected.length} className="mt-4 min-h-12 w-full rounded-xl bg-zenith-400 px-5 font-bold text-black disabled:opacity-40">{busy ? "Recording attendance..." : `Record today's attendance for ${selected.length} members`}</button>
         </fieldset>
       </form>
     </main>
