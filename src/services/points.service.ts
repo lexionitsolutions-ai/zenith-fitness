@@ -158,7 +158,7 @@ async function memberRankings(now: Date) {
     SELECT p."memberId", m."fullName", m."admissionId",
       COALESCE(s."currentStreak", 0)::bigint AS "currentStreak",
       SUM(p.points)::bigint AS "totalPoints",
-      COALESCE(SUM(p.points) FILTER (WHERE p."transactionType" = 'DAILY_VISIT'
+      COALESCE(SUM(p.points) FILTER (WHERE p.points > 0
         AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date), 0)::bigint AS "monthlyPoints",
       COUNT(*) FILTER (WHERE p."transactionType" = 'DAILY_VISIT'
         AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date) AS "monthlyVisits"
@@ -183,7 +183,7 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
   const memberRankIndex = rankings.findIndex(row => row.memberId === memberId);
   const currentMemberRank = memberRankIndex >= 0 ? memberRankIndex + 1 : null;
   const pointsBalance = memberRankIndex >= 0 ? Number(rankings[memberRankIndex].totalPoints) : 0;
-  const monthlyLeaders = rankings.filter(row => Number(row.monthlyVisits) > 0).sort((a, b) =>
+  const monthlyLeaders = rankings.filter(row => Number(row.monthlyPoints) > 0).sort((a, b) =>
     Number(b.monthlyPoints) - Number(a.monthlyPoints) || Number(b.monthlyVisits) - Number(a.monthlyVisits) || (a.memberId < b.memberId ? -1 : a.memberId > b.memberId ? 1 : 0));
   return {
     member,
@@ -209,7 +209,7 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
     leaderboard: rankings.map((row, index) => ({
       rank: index + 1,
       name: row.fullName.split(" ")[0],
-      admissionId: `${row.admissionId.slice(0, 3)}***${row.admissionId.slice(-2)}`,
+      admissionId: row.admissionId,
       points: Number(row.totalPoints),
       currentStreak: Number(row.currentStreak),
       isCurrentMember: row.memberId === memberId,
@@ -217,7 +217,7 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
     monthlyAchievers: monthlyLeaders.map((row, index) => ({
       rank: index + 1,
       name: row.fullName.split(" ")[0],
-      admissionId: `${row.admissionId.slice(0, 3)}***${row.admissionId.slice(-2)}`,
+      admissionId: row.admissionId,
       points: Number(row.monthlyPoints),
       visits: Number(row.monthlyVisits),
       isCurrentMember: row.memberId === memberId,

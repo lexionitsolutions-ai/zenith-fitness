@@ -15,6 +15,7 @@ import {
   Users,
   UserRoundCog,
   Dumbbell,
+  Gift,
 } from "lucide-react";
 
 export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
@@ -26,6 +27,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           { href: "/admin/import", label: "Sync", icon: Database },
           { href: "/admin/announcements", label: "Posts", icon: MessageSquare },
           { href: "/admin/points", label: "Ledger", icon: ScrollText },
+          { href: "/admin/award-points", label: "Award Points", icon: Gift },
           { href: "/admin/members", label: "Members", icon: UserRoundCog },
           { href: "/admin/memberships", label: "Approvals", icon: ScrollText },
           { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },

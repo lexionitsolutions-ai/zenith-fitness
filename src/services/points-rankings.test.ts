@@ -38,6 +38,8 @@ describe("complete rewards rankings", () => {
     expect(result.leaderboard[0]).toMatchObject({ currentStreak: 4, points: 80, isCurrentMember: true });
     expect(result.monthlyAchievers.map(row => row.name)).toEqual(["Beta", "Alpha"]);
     expect(result.monthlyAchievers[0]).toMatchObject({ rank: 1, points: 10, visits: 2, isCurrentMember: true });
+    expect(result.leaderboard[0].admissionId).toBe("ZF-2");
+    expect(result.monthlyAchievers[0].admissionId).toBe("ZF-2");
   });
   it("preserves an unranked zero balance for a member without transactions", async () => {
     database.member.findUnique.mockResolvedValue({ qrToken: "preview", fullName: "Member", admissionId: "ZF-1" });
@@ -59,6 +61,17 @@ describe("complete rewards rankings", () => {
     expect(result.leaderboard.map(row => row.name)).toEqual(["Alpha", "Beta", "Gamma"]);
     expect(result.currentMemberRank).toBe(1);
     expect(result.pointsBalance).toBe(0);
+  });
+  it("includes monthly points earners who have no daily visits", async () => {
+    database.member.findUnique.mockResolvedValue({ qrToken: "preview", fullName: "Alpha", admissionId: "ZF-1" });
+    database.$queryRaw.mockResolvedValue([
+      { memberId: "a", fullName: "Alpha", admissionId: "ZF-1", currentStreak: 0n, totalPoints: 400n, monthlyPoints: 400n, monthlyVisits: 0n },
+      { memberId: "b", fullName: "Beta", admissionId: "ZF-2", currentStreak: 3n, totalPoints: 500n, monthlyPoints: 15n, monthlyVisits: 3n },
+    ]);
+    const result = await getMemberPoints("a");
+    expect(result.monthlyAchievers.map(row => row.name)).toEqual(["Alpha", "Beta"]);
+    expect(result.monthlyAchievers[0]).toMatchObject({ points: 400, visits: 0, admissionId: "ZF-1" });
+    expect(result.leaderboard[0].name).toBe("Beta");
   });
 
 });
