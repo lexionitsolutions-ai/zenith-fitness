@@ -14,10 +14,8 @@ export default async function Page() {
 
   const profile = await prisma.member.findUnique({ where: { id: session.memberId }, include: { memberships: true } });
   const active = profile ? authoritativeMemberships(profile).filter(m => calculateMembershipStatus(m.startDate, m.endDate) === "ACTIVE") : [];
-  // The canonical manager stores end-start, while legacy imports include both
-  // dates. Even the shortest three-calendar-month cycle has 88 elapsed days.
-  const dietEligible = active.some(m => (m.planDays ?? 0) >= 88);
-  if (!dietEligible) return <><main className="mx-auto min-h-dvh max-w-3xl px-5 py-12"><h1 className="text-3xl font-black">{active.length ? "Free Diet Plan" : "No Active Plan"}</h1><p className="mt-4 text-white/60">A free diet plan is included with an approved active membership of 3 months or longer.</p><a href="/membership" className="mt-6 inline-block rounded-xl bg-zenith-400 px-5 py-3 font-bold text-black">View memberships</a></main><MemberBottomNav active="diet"/></>;
+  const dietEligible = active.length > 0;
+  if (!dietEligible) return <><main className="mx-auto min-h-dvh max-w-3xl px-5 pb-32 pt-[calc(2rem+env(safe-area-inset-top))]"><h1 className="text-3xl font-black">No Active Plan</h1><p className="mt-4 text-white/60">A free diet plan is included with every approved active membership, including the 1-month plan.</p><a href="/membership" className="mt-6 inline-block rounded-xl bg-zenith-400 px-5 py-3 font-bold text-black">View memberships</a></main><MemberBottomNav active="diet"/></>;
 
   const member = profile;
 

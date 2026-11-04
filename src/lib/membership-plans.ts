@@ -8,7 +8,7 @@ export const MEMBERSHIP_PLANS = [
 ].flatMap(group => durations.map((months, i) => ({
   code: `${group.category}_${months}`, category: group.category, label: group.label,
   months, name: `${months === 12 ? "1 Year" : `${months} Month${months > 1 ? "s" : ""}`} · ${group.label}`,
-  price: group.prices[i], discountCap: group.category === "FEMALE_HAPPY" ? 0 : caps[i], dietIncluded: months >= 3,
+  price: group.prices[i], discountCap: group.category === "FEMALE_HAPPY" ? 0 : caps[i], dietIncluded: true,
 })));
 export type PurchasePlan = typeof MEMBERSHIP_PLANS[number];
 export function renewalDiscount(balance: number, cap: number, price: number) {

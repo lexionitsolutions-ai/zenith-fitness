@@ -25,7 +25,7 @@ export function ProgressClient({ data }: { data: Snapshot }) {
   const [error, setError] = useState("");
   const target = data.target;
   if (!target) {
-    return <main className="mx-auto min-h-dvh max-w-3xl px-4 py-6"><Back /><section className="mt-8 rounded-3xl border border-white/10 bg-white/[.04] p-6"><h1 className="text-3xl font-black">My Progress</h1><p className="mt-2 text-white/55">Set Target to start tracking your BMI history.</p><Link href="/set-target" className="mt-6 inline-flex min-h-11 items-center rounded-2xl bg-zenith-400 px-5 font-bold text-black">Set Target</Link></section></main>;
+    return <main className="mx-auto min-h-dvh max-w-3xl px-4 pb-28 pt-[calc(2rem+env(safe-area-inset-top))]"><Back /><section className="mt-8 rounded-3xl border border-white/10 bg-white/[.04] p-6"><h1 className="text-3xl font-black">My Progress</h1><p className="mt-2 text-white/55">Set Target to start tracking your BMI history.</p><Link href="/set-target" className="mt-6 inline-flex min-h-11 items-center rounded-2xl bg-zenith-400 px-5 font-bold text-black">Set Target</Link></section></main>;
   }
   const isWeight = target.goalType === "WEIGHT_LOSS";
   const completed = target.status === "COMPLETED";
@@ -54,7 +54,7 @@ export function ProgressClient({ data }: { data: Snapshot }) {
     router.refresh();
   }
   return (
-    <main className="safe-bottom mx-auto min-h-dvh max-w-3xl px-4 pb-28 pt-6">
+    <main className="safe-bottom mx-auto min-h-dvh max-w-3xl px-4 pb-28 pt-[calc(2rem+env(safe-area-inset-top))]">
       <Back />
       <section className="mt-6 rounded-3xl border border-white/10 bg-white/[.04] p-6">
         <p className="text-sm text-zenith-300">My Progress</p>

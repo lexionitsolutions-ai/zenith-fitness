@@ -130,15 +130,33 @@ export async function findMemberForDailyVisit(input: string) {
   return { qrToken: member.qrToken, admissionId: member.admissionId, name: member.fullName };
 }
 
-type PointsRanking = { memberId: string; fullName: string; admissionId: string; totalPoints: bigint; monthlyPoints: bigint; monthlyVisits: bigint };
+type PointsRanking = { memberId: string; fullName: string; admissionId: string; totalPoints: bigint; monthlyPoints: bigint; monthlyVisits: bigint; currentStreak: bigint };
 
 async function memberRankings(now: Date) {
   const monthStart = startOfIndiaMonth(now);
   const nextMonthStart = startOfNextMonth(monthStart);
-  // One grouped read replaces two ranking queries, member-name lookup and
-  // member-balance aggregation. Dates stay bound, and every table is qualified.
+  const today = indiaBusinessDate(now);
+  // Rank distinct visit days against the latest day to count the uninterrupted
+  // streak. Match the member streak card's 42-hour grace period and 370-day cap.
   return prisma.$queryRaw<PointsRanking[]>`
+    WITH visit_days AS (
+      SELECT "memberId", "businessDate", MAX("createdAt") AS "latestScan"
+      FROM ${appDatabaseObject("PointTransaction")}
+      WHERE "transactionType" = 'DAILY_VISIT' AND "businessDate" <= ${today}::date
+      GROUP BY "memberId", "businessDate"
+    ), numbered_visits AS (
+      SELECT *, ROW_NUMBER() OVER (PARTITION BY "memberId" ORDER BY "businessDate" DESC) AS day_number,
+        MAX("businessDate") OVER (PARTITION BY "memberId") AS latest_day,
+        FIRST_VALUE("latestScan") OVER (PARTITION BY "memberId" ORDER BY "businessDate" DESC) AS latest_scan
+      FROM visit_days
+    ), streaks AS (
+      SELECT "memberId", CASE WHEN ${now}::timestamp <= MAX(latest_scan) + INTERVAL '42 hours'
+        THEN COUNT(*) FILTER (WHERE day_number <= 370 AND "businessDate" = latest_day - (day_number::int - 1))
+        ELSE 0 END AS "currentStreak"
+      FROM numbered_visits GROUP BY "memberId"
+    )
     SELECT p."memberId", m."fullName", m."admissionId",
+      COALESCE(s."currentStreak", 0)::bigint AS "currentStreak",
       SUM(p.points)::bigint AS "totalPoints",
       COALESCE(SUM(p.points) FILTER (WHERE p."transactionType" = 'DAILY_VISIT'
         AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date), 0)::bigint AS "monthlyPoints",
@@ -146,8 +164,9 @@ async function memberRankings(now: Date) {
         AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date) AS "monthlyVisits"
     FROM ${appDatabaseObject("PointTransaction")} AS p
     JOIN ${appDatabaseObject("Member")} AS m ON m.id = p."memberId"
-    GROUP BY p."memberId", m."fullName", m."admissionId"
-    ORDER BY "totalPoints" DESC, p."memberId" ASC
+    LEFT JOIN streaks AS s ON s."memberId" = p."memberId"
+    GROUP BY p."memberId", m."fullName", m."admissionId", s."currentStreak"
+    ORDER BY "currentStreak" DESC, p."memberId" ASC
   `;
 }
 
@@ -160,6 +179,7 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
     getDailyVisitStreakStatus(memberId, now),
   ]);
   if (!member) throw new AppError("MEMBER_NOT_FOUND", "Member not found.", 404);
+  rankings.sort((a, b) => Number(b.currentStreak) - Number(a.currentStreak) || (a.memberId < b.memberId ? -1 : a.memberId > b.memberId ? 1 : 0));
   const memberRankIndex = rankings.findIndex(row => row.memberId === memberId);
   const currentMemberRank = memberRankIndex >= 0 ? memberRankIndex + 1 : null;
   const pointsBalance = memberRankIndex >= 0 ? Number(rankings[memberRankIndex].totalPoints) : 0;
@@ -191,6 +211,7 @@ export async function getMemberPoints(memberId: string, now = new Date()) {
       name: row.fullName.split(" ")[0],
       admissionId: `${row.admissionId.slice(0, 3)}***${row.admissionId.slice(-2)}`,
       points: Number(row.totalPoints),
+      currentStreak: Number(row.currentStreak),
       isCurrentMember: row.memberId === memberId,
     })),
     monthlyAchievers: monthlyLeaders.map((row, index) => ({

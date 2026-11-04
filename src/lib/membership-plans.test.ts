@@ -4,6 +4,10 @@ describe("membership checkout rules", () => {
   it("uses the supplied prices for all twelve plans", () => {
     expect(MEMBERSHIP_PLANS.map(p => p.price)).toEqual([2000,4699,6499,9991,1499,3999,5699,8999,1000,3000,4500,6000]);
   });
+  it("includes a free diet plan in every membership, including all one-month plans", () => {
+    expect(MEMBERSHIP_PLANS.every(plan => plan.dietIncluded)).toBe(true);
+    expect(MEMBERSHIP_PLANS.filter(plan => plan.months === 1)).toHaveLength(3);
+  });
   it("restricts female happy hours and male plans by profile gender", () => {
     expect(planForGender("FEMALE_HAPPY_1", "Male")).toBeNull();
     expect(planForGender("MALE_1", "Female")).toBeNull();

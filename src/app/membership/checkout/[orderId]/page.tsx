@@ -10,5 +10,5 @@ export default async function Page({ params }: { params:Promise<{orderId:string}
   const {orderId} = await params;
   const overview = await purchaseOverview(session.userId);
   if (!overview.orders.some(order => order.id === orderId)) notFound();
-  return <><main className="mx-auto min-h-dvh max-w-2xl px-4 pb-32 pt-6 sm:px-6"><MembershipCheckout initial={overview} orderId={orderId}/></main><MemberBottomNav active="home"/></>;
+  return <><main className="mx-auto min-h-dvh max-w-2xl px-4 pb-32 pt-[calc(2rem+env(safe-area-inset-top))] sm:px-6"><MembershipCheckout initial={overview} orderId={orderId}/></main><MemberBottomNav active="home"/></>;
 }

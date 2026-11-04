@@ -9,7 +9,7 @@ type Data = Awaited<ReturnType<typeof import("@/services/points.service").getMem
 
 export function PointsView({ data }: { data: Data }) {
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl px-4 py-6">
+    <main className="mx-auto min-h-dvh max-w-3xl px-4 pb-28 pt-[calc(2rem+env(safe-area-inset-top))]">
       <Link href="/dashboard" className="inline-flex min-h-11 items-center gap-2 text-sm text-white/60">
         <ArrowLeft size={18} /> Dashboard
       </Link>
@@ -17,7 +17,7 @@ export function PointsView({ data }: { data: Data }) {
         <div>
           <p className="text-sm text-zenith-400">ZENITH REWARDS</p>
           <h1 className="text-3xl font-black">{data.pointsBalance.toLocaleString("en-IN")} points</h1>
-          <p className="mt-1 text-sm text-white/55">Your rank: {data.currentMemberRank ? `#${data.currentMemberRank}` : "Not ranked yet"}</p>
+          <p className="mt-1 text-sm text-white/55">Your streak rank: {data.currentMemberRank ? `#${data.currentMemberRank}` : "Not ranked yet"}</p>
         </div>
         <Trophy className="text-amber-300" size={40} />
       </header>
@@ -42,21 +42,9 @@ export function PointsView({ data }: { data: Data }) {
         </article>
       </section>
 
-      <section className="mt-7 grid gap-4 sm:grid-cols-2">
-        <article className="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <h2 className="flex items-center gap-2 font-bold"><Trophy className="text-amber-300" /> Leaderboard</h2>
-          <p className="mt-2 text-xs text-white/45">{data.leaderboard.length} members - Scroll to see all</p>
-          <ol aria-label="Leaderboard members" tabIndex={0} className="mt-4 max-h-[min(60dvh,560px)] space-y-2 overflow-y-auto overscroll-y-contain rounded-xl pr-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zenith-400">
-            {data.leaderboard.map((member) => (
-              <li key={member.rank} className={`flex justify-between gap-3 rounded-xl p-3 ${member.isCurrentMember ? "bg-zenith-500/20" : "bg-black/20"}`}>
-                <span><b className="mr-3">#{member.rank}</b>{member.name} <small className="text-white/35">{member.admissionId}</small></span>
-                <b>{member.points}</b>
-              </li>
-            ))}
-          </ol>
-        </article>
+      <section className="mt-7 grid gap-4">
         <article className="rounded-3xl border border-amber-300/25 bg-amber-300/[.06] p-6">
-          <h2 className="flex items-center gap-2 font-bold"><Medal className="text-amber-300" /> Achiever of the Month</h2>
+          <h2 className="flex items-center gap-2 font-bold"><Medal className="text-amber-300" /> Achievers of the Month</h2>
           <p className="mt-2 text-xs text-white/45">{data.monthlyAchievers.length} members - Scroll to see all</p>
           <ol aria-label="Monthly achievers" tabIndex={0} className="mt-4 max-h-[min(60dvh,560px)] space-y-2 overflow-y-auto overscroll-y-contain rounded-xl pr-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zenith-400">
             {data.monthlyAchievers.length ? data.monthlyAchievers.map((member) => (
@@ -65,6 +53,18 @@ export function PointsView({ data }: { data: Data }) {
                 <b className="text-amber-200">{member.points}</b>
               </li>
             )) : <p className="text-sm text-white/40">Monthly achievers will appear after visit points are awarded.</p>}
+          </ol>
+        </article>
+        <article className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h2 className="flex items-center gap-2 font-bold"><Trophy className="text-amber-300" /> Leaderboard</h2>
+          <p className="mt-2 text-xs text-white/45">Ranked by current visit streak - {data.leaderboard.length} members</p>
+          <ol aria-label="Leaderboard members" tabIndex={0} className="mt-4 max-h-[min(60dvh,560px)] space-y-2 overflow-y-auto overscroll-y-contain rounded-xl pr-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zenith-400">
+            {data.leaderboard.map((member) => (
+              <li key={member.rank} className={`flex justify-between gap-3 rounded-xl p-3 ${member.isCurrentMember ? "bg-zenith-500/20" : "bg-black/20"}`}>
+                <span><b className="mr-3">#{member.rank}</b>{member.name} <small className="text-white/35">{member.admissionId}</small></span>
+                <b className="shrink-0">{member.currentStreak} {member.currentStreak === 1 ? "day" : "days"}</b>
+              </li>
+            ))}
           </ol>
         </article>
       </section>

@@ -141,7 +141,7 @@ export function SetTargetClient({ initialData }: { initialData: Snapshot }) {
 }
 
 function Shell({ children }: { children: ReactNode }) {
-  return <main className="safe-bottom mx-auto min-h-dvh max-w-3xl px-4 pb-28 pt-6"><Link href="/dashboard" className="inline-flex min-h-11 items-center gap-2 text-sm text-white/60"><ArrowLeft size={18} /> Dashboard</Link>{children}</main>;
+  return <main className="safe-bottom mx-auto min-h-dvh max-w-3xl px-4 pb-28 pt-[calc(2rem+env(safe-area-inset-top))]"><Link href="/dashboard" className="inline-flex min-h-11 items-center gap-2 text-sm text-white/60"><ArrowLeft size={18} /> Dashboard</Link>{children}</main>;
 }
 
 function Input(props: { label: string; value: string; onChange: (value: string) => void; type?: string; min?: string; max?: string }) {

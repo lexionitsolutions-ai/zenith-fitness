@@ -12,10 +12,9 @@ vi.mock("@/lib/database/prisma", () => ({ prisma: database }));
 describe("complete rewards rankings", () => {
   it("includes members beyond rank 50 and monthly rank 10 with their correct rank", async () => {
     const members = Array.from({ length: 80 }, (_, index) => ({ id: `member-${index + 1}`, fullName: `Member${index + 1} Example`, admissionId: `ZF-${index + 1}` }));
-    const rankings = members.map((member, index) => ({ memberId: member.id, _sum: { points: 800 - index * 5 }, _count: { id: 80 - index } }));
     database.member.findUnique.mockResolvedValue({ ...members[64], qrToken: "preview" });
     database.member.findMany.mockResolvedValue(members);
-    database.$queryRaw.mockResolvedValue(members.map((member, index) => ({ memberId: member.id, fullName: member.fullName, admissionId: member.admissionId, totalPoints: BigInt(800 - index * 5), monthlyPoints: BigInt(800 - index * 5), monthlyVisits: BigInt(80 - index) })));
+    database.$queryRaw.mockResolvedValue(members.map((member, index) => ({ memberId: member.id, fullName: member.fullName, admissionId: member.admissionId, totalPoints: BigInt(800 - index * 5), monthlyPoints: BigInt(800 - index * 5), currentStreak: BigInt(80 - index), monthlyVisits: BigInt(80 - index) })));
     const result = await getMemberPoints("member-65", new Date("2026-10-26T10:00:00Z"));
     expect(result.leaderboard).toHaveLength(80);
     expect(result.monthlyAchievers).toHaveLength(80);
@@ -28,13 +27,15 @@ describe("complete rewards rankings", () => {
   it("orders monthly ties by visits and excludes members without monthly visits", async () => {
     database.member.findUnique.mockResolvedValue({ qrToken: "preview", fullName: "Beta", admissionId: "ZF-2" });
     database.$queryRaw.mockResolvedValue([
-      { memberId: "a", fullName: "Alpha", admissionId: "ZF-1", totalPoints: 100n, monthlyPoints: 10n, monthlyVisits: 1n },
-      { memberId: "b", fullName: "Beta", admissionId: "ZF-2", totalPoints: 80n, monthlyPoints: 10n, monthlyVisits: 2n },
-      { memberId: "c", fullName: "Gamma", admissionId: "ZF-3", totalPoints: 0n, monthlyPoints: 0n, monthlyVisits: 0n },
+      { memberId: "a", fullName: "Alpha", admissionId: "ZF-1", currentStreak: 1n, totalPoints: 100n, monthlyPoints: 10n, monthlyVisits: 1n },
+      { memberId: "b", fullName: "Beta", admissionId: "ZF-2", currentStreak: 4n, totalPoints: 80n, monthlyPoints: 10n, monthlyVisits: 2n },
+      { memberId: "c", fullName: "Gamma", admissionId: "ZF-3", currentStreak: 0n, totalPoints: 0n, monthlyPoints: 0n, monthlyVisits: 0n },
     ]);
     const result = await getMemberPoints("b");
     expect(result.pointsBalance).toBe(80);
-    expect(result.currentMemberRank).toBe(2);
+    expect(result.currentMemberRank).toBe(1);
+    expect(result.leaderboard.map(row => row.name)).toEqual(["Beta", "Alpha", "Gamma"]);
+    expect(result.leaderboard[0]).toMatchObject({ currentStreak: 4, points: 80, isCurrentMember: true });
     expect(result.monthlyAchievers.map(row => row.name)).toEqual(["Beta", "Alpha"]);
     expect(result.monthlyAchievers[0]).toMatchObject({ rank: 1, points: 10, visits: 2, isCurrentMember: true });
   });
@@ -46,6 +47,18 @@ describe("complete rewards rankings", () => {
     expect(result.currentMemberRank).toBeNull();
     expect(result.leaderboard).toEqual([]);
     expect(result.monthlyAchievers).toEqual([]);
+  });
+  it("keeps tied streak ranks stable without using points as a tiebreaker", async () => {
+    database.member.findUnique.mockResolvedValue({ qrToken: "preview", fullName: "Alpha", admissionId: "ZF-1" });
+    database.$queryRaw.mockResolvedValue([
+      { memberId: "b", fullName: "Beta", admissionId: "ZF-2", currentStreak: 2n, totalPoints: 900n, monthlyPoints: 0n, monthlyVisits: 0n },
+      { memberId: "a", fullName: "Alpha", admissionId: "ZF-1", currentStreak: 2n, totalPoints: 0n, monthlyPoints: 0n, monthlyVisits: 0n },
+      { memberId: "c", fullName: "Gamma", admissionId: "ZF-3", currentStreak: 0n, totalPoints: 1000n, monthlyPoints: 0n, monthlyVisits: 0n },
+    ]);
+    const result = await getMemberPoints("a");
+    expect(result.leaderboard.map(row => row.name)).toEqual(["Alpha", "Beta", "Gamma"]);
+    expect(result.currentMemberRank).toBe(1);
+    expect(result.pointsBalance).toBe(0);
   });
 
 });
