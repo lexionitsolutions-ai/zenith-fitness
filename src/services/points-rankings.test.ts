@@ -62,16 +62,20 @@ describe("complete rewards rankings", () => {
     expect(result.currentMemberRank).toBe(1);
     expect(result.pointsBalance).toBe(0);
   });
-  it("includes monthly points earners who have no daily visits", async () => {
+  it("excludes award-only earners and ranks monthly daily points independently of total balances", async () => {
     database.member.findUnique.mockResolvedValue({ qrToken: "preview", fullName: "Alpha", admissionId: "ZF-1" });
     database.$queryRaw.mockResolvedValue([
-      { memberId: "a", fullName: "Alpha", admissionId: "ZF-1", currentStreak: 0n, totalPoints: 400n, monthlyPoints: 400n, monthlyVisits: 0n },
+      { memberId: "a", fullName: "Alpha", admissionId: "ZF-1", currentStreak: 0n, totalPoints: 400n, monthlyPoints: 0n, monthlyVisits: 0n },
       { memberId: "b", fullName: "Beta", admissionId: "ZF-2", currentStreak: 3n, totalPoints: 500n, monthlyPoints: 15n, monthlyVisits: 3n },
+      { memberId: "c", fullName: "Gamma", admissionId: "ZF-3", currentStreak: 1n, totalPoints: 1000n, monthlyPoints: 5n, monthlyVisits: 1n },
     ]);
     const result = await getMemberPoints("a");
-    expect(result.monthlyAchievers.map(row => row.name)).toEqual(["Alpha", "Beta"]);
-    expect(result.monthlyAchievers[0]).toMatchObject({ points: 400, visits: 0, admissionId: "ZF-1" });
+    expect(result.monthlyAchievers.map(row => row.name)).toEqual(["Beta", "Gamma"]);
+    expect(result.monthlyAchievers[0]).toMatchObject({ points: 15, visits: 3, admissionId: "ZF-2" });
+    expect(result.pointsBalance).toBe(400);
     expect(result.leaderboard[0].name).toBe("Beta");
+    const query = database.$queryRaw.mock.calls.at(-1)![0].join("?");
+    expect(query).toMatch(/SUM\(p\.points\) FILTER \(WHERE p\."transactionType" = 'DAILY_VISIT' AND p\.points > 0\s+AND p\."businessDate" >= .*?::date AND p\."businessDate" < .*?::date\), 0\)::bigint AS "monthlyPoints"/);
   });
 
 });

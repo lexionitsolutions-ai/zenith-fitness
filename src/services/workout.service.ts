@@ -4,7 +4,7 @@ import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
 import { GOAL_PLAN_SLUG, goalCards } from "@/lib/workouts/catalog";
 import { parseYouTubeId, youtubeEmbedUrl, youtubeThumbnailUrl } from "@/lib/youtube";
-import dataset from "@/data/workouts/exercises.normalized.json";
+
 
 const idSchema = z.string().uuid();
 export const goalSchema = z.object({ fitnessGoal: z.nativeEnum(FitnessGoal), workoutPlanSlug: z.string().min(1).max(80).optional() });
@@ -63,7 +63,7 @@ export function stationDisplay(exercise: { exerciseType: string; equipmentType: 
 
 export async function getActiveWorkout(memberUserId: string) {
   const assignment = await prisma.memberWorkoutAssignment.findFirst({
-    where: { memberId: memberUserId, status: "ACTIVE" },
+    where: { memberId: memberUserId, status: "ACTIVE", workoutPlan: { active: true, slug: { in: goalCards.map((card) => card.planSlug) } } },
     orderBy: { assignedAt: "desc" },
     include: {
       workoutPlan: { include: { days: { orderBy: { sortOrder: "asc" }, include: { exercises: { orderBy: { sortOrder: "asc" }, include: { exercise: { include: { station: true } } } } } } } },
@@ -77,7 +77,8 @@ export async function getActiveWorkout(memberUserId: string) {
 export async function selectWorkoutGoal(memberUserId: string, input: unknown) {
   const { fitnessGoal, workoutPlanSlug } = goalSchema.parse(input);
   const planSlug = workoutPlanSlug ?? GOAL_PLAN_SLUG[fitnessGoal];
-  const plan = await prisma.workoutPlan.findUnique({ where: { slug: planSlug }, select: { id: true } });
+  const plan = goalCards.some((card) => card.planSlug === planSlug)
+    ? await prisma.workoutPlan.findFirst({ where: { slug: planSlug, active: true }, select: { id: true } }) : null;
   if (!plan) throw new AppError("WORKOUT_PLAN_MISSING", "Workout plan is not available yet.", 400);
   return prisma.$transaction(async (tx) => {
     const active = await tx.memberWorkoutAssignment.findFirst({ where: { memberId: memberUserId, status: "ACTIVE" } });
@@ -88,7 +89,9 @@ export async function selectWorkoutGoal(memberUserId: string, input: unknown) {
 
 export async function replaceWorkoutGoal(memberUserId: string, input: unknown) {
   const { fitnessGoal, workoutPlanSlug } = goalSchema.parse(input);
-  const plan = await prisma.workoutPlan.findUnique({ where: { slug: workoutPlanSlug ?? GOAL_PLAN_SLUG[fitnessGoal] }, select: { id: true } });
+  const planSlug = workoutPlanSlug ?? GOAL_PLAN_SLUG[fitnessGoal];
+  const plan = goalCards.some((card) => card.planSlug === planSlug)
+    ? await prisma.workoutPlan.findFirst({ where: { slug: planSlug, active: true }, select: { id: true } }) : null;
   if (!plan) throw new AppError("WORKOUT_PLAN_MISSING", "Workout plan is not available yet.", 400);
   return prisma.$transaction(async (tx) => {
     await tx.memberWorkoutAssignment.updateMany({ where: { memberId: memberUserId, status: "ACTIVE" }, data: { status: "REPLACED", completedAt: new Date() } });
@@ -122,7 +125,7 @@ export async function setCurrentDay(memberUserId: string, dayNumber: number) {
 
 export async function getWorkoutHistory(memberUserId: string) {
   return prisma.memberWorkoutAssignment.findMany({
-    where: { memberId: memberUserId },
+    where: { memberId: memberUserId, workoutPlan: { active: true, slug: { in: goalCards.map((card) => card.planSlug) } } },
     orderBy: { assignedAt: "desc" },
     select: { id: true, fitnessGoal: true, status: true, assignedAt: true, completedAt: true, workoutPlan: { select: { name: true, level: true } }, _count: { select: { progress: true } } },
   });
@@ -131,6 +134,7 @@ export async function getWorkoutHistory(memberUserId: string) {
 export async function getAdminWorkoutConsole() {
   const [plans, exercises, stations, members] = await Promise.all([
     prisma.workoutPlan.findMany({
+      where: { active: true, slug: { in: goalCards.map((card) => card.planSlug) } },
       orderBy: [{ level: "asc" }, { name: "asc" }],
       include: {
         _count: { select: { days: true, assignments: true } },
@@ -142,7 +146,7 @@ export async function getAdminWorkoutConsole() {
         },
       },
     }),
-    prisma.exercise.findMany({ orderBy: { name: "asc" }, include: { station: true } }),
+    prisma.exercise.findMany({ where: { active: true }, orderBy: { name: "asc" }, include: { station: true } }),
     prisma.gymStation.findMany({ orderBy: { stationCode: "asc" } }),
     prisma.user.findMany({ where: { role: Role.MEMBER, isActive: true }, orderBy: { displayName: "asc" }, take: 100, select: { id: true, displayName: true, mobileNumber: true, member: { select: { fullName: true, admissionId: true } } } }),
   ]);
@@ -186,6 +190,10 @@ export async function adminDeleteWorkoutCardExercise(input: unknown) {
 export async function adminAssignWorkout(adminUserId: string, input: unknown) {
   const data = adminAssignSchema.parse(input);
   return prisma.$transaction(async (tx) => {
+    const plan = await tx.workoutPlan.findFirst({
+      where: { id: data.workoutPlanId, active: true, slug: { in: goalCards.map((card) => card.planSlug) } }, select: { id: true },
+    });
+    if (!plan) throw new AppError("WORKOUT_PLAN_MISSING", "Select an available workout level.", 400);
     if (data.replaceActive) {
       await tx.memberWorkoutAssignment.updateMany({ where: { memberId: data.memberUserId, status: AssignmentStatus.ACTIVE }, data: { status: AssignmentStatus.REPLACED, completedAt: new Date() } });
     }
@@ -270,28 +278,6 @@ type AssignmentWithPlan = Prisma.MemberWorkoutAssignmentGetPayload<{
   };
 }>;
 
-const verifiedExerciseVideos = new Map(
-  dataset.exercises
-    .filter((exercise) => exercise.status === "VERIFIED" && exercise.video?.youtubeId)
-    .map((exercise) => [exercise.id, exercise.video])
-);
-
-function exerciseWithSeededVideo(exercise: AssignmentWithPlan["workoutPlan"]["days"][number]["exercises"][number]["exercise"]) {
-  if (exercise.videoStatus === "VERIFIED" && exercise.youtubeVideoId) return exercise;
-  const seededVideo = exercise.externalId ? verifiedExerciseVideos.get(exercise.externalId) : null;
-  if (!seededVideo?.youtubeId) return exercise;
-  return {
-    ...exercise,
-    videoStatus: "VERIFIED" as const,
-    youtubeVideoId: seededVideo.youtubeId,
-    videoUrl: youtubeEmbedUrl(seededVideo.youtubeId),
-    thumbnailUrl: youtubeThumbnailUrl(seededVideo.youtubeId),
-    videoTitle: seededVideo.title,
-    videoChannel: seededVideo.channel,
-    videoDuration: seededVideo.duration,
-  };
-}
-
 function buildWorkoutView(assignment: AssignmentWithPlan) {
   const completed = new Set(assignment.progress.filter((item) => item.completed).map((item) => item.workoutPlanExerciseId));
   const selected = new Map(assignment.progress.map((item) => [item.workoutPlanExerciseId, item.selected]));
@@ -302,6 +288,7 @@ function buildWorkoutView(assignment: AssignmentWithPlan) {
       id: day.id,
       dayNumber: day.dayNumber,
       title: day.title,
+      description: day.description,
       estimatedMinutes: day.estimatedMinutes,
       muscleGroups: [...new Set(day.exercises.map((item) => item.sectionName).filter((name) => name !== "Warm-Up"))],
       completed: required.length > 0 && done === required.length,
@@ -312,6 +299,7 @@ function buildWorkoutView(assignment: AssignmentWithPlan) {
         id: item.id,
         sortOrder: item.sortOrder,
         sectionName: item.sectionName,
+        notes: item.notes,
         sets: item.sets,
         reps: item.reps,
         minimumReps: item.minimumReps,
@@ -320,19 +308,22 @@ function buildWorkoutView(assignment: AssignmentWithPlan) {
         restSeconds: item.restSeconds,
         alternativeGroup: item.alternativeGroup,
         completed: completed.has(item.id),
-        exercise: { ...exerciseWithSeededVideo(item.exercise), stationDisplay: stationDisplay(item.exercise) },
+        exercise: { ...item.exercise, stationDisplay: stationDisplay(item.exercise) },
       })),
     };
   });
   const total = days.reduce((sum, day) => sum + day.totalCount, 0);
   const done = days.reduce((sum, day) => sum + day.completedCount, 0);
-  const nextDay = days.find((day) => !day.completed) ?? days[0];
+  const trainingDays = days.filter((day) => day.totalCount > 0);
+  const nextDay = trainingDays.find((day) => !day.completed) ?? trainingDays[0];
   const nextExercise = nextDay?.exercises.find((item) => !item.completed);
   return {
     summary: {
       assignmentId: assignment.id,
       fitnessGoal: assignment.fitnessGoal,
       planName: assignment.workoutPlan.name,
+      planSlug: assignment.workoutPlan.slug,
+      description: assignment.workoutPlan.description,
       level: assignment.workoutPlan.level,
       currentDay: assignment.currentDay,
       weeklyPercent: total ? Math.round((done / total) * 100) : 0,

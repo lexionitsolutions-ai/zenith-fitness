@@ -158,7 +158,7 @@ async function memberRankings(now: Date) {
     SELECT p."memberId", m."fullName", m."admissionId",
       COALESCE(s."currentStreak", 0)::bigint AS "currentStreak",
       SUM(p.points)::bigint AS "totalPoints",
-      COALESCE(SUM(p.points) FILTER (WHERE p.points > 0
+      COALESCE(SUM(p.points) FILTER (WHERE p."transactionType" = 'DAILY_VISIT' AND p.points > 0
         AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date), 0)::bigint AS "monthlyPoints",
       COUNT(*) FILTER (WHERE p."transactionType" = 'DAILY_VISIT'
         AND p."businessDate" >= ${monthStart}::date AND p."businessDate" < ${nextMonthStart}::date) AS "monthlyVisits"

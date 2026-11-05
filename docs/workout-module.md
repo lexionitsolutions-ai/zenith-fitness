@@ -1,108 +1,29 @@
-# Workout module
+﻿# Workout module
 
-The workout module adds member workout assignments, plan cards, exercises, station mappings, and persistent exercise progress.
+Members choose one of three updated Zenith Fitness cards:
 
-## Schema
+- Level 1 — Foundation (`zenith-level-1-foundation`): two weeks, with mixed workouts A–F on alternating days, trainer-led cardio days, and a rest day each week.
+- Level 2 — Strength Builder (`zenith-level-2-strength-builder`): seven-day schedule with single muscle groups, cardio, trainer-selected biceps/triceps emphasis, and nine abs options on days 3 and 6.
+- Level 3 — Performance (`zenith-level-3-performance`): seven-day schedule with four paired-muscle sessions, recovery, optional cardio/mobility, and rest.
 
-New Prisma enums: `FitnessGoal`, `WorkoutLevel`, `ExerciseType`, and `AssignmentStatus`.
-Video review uses `ExerciseVideoStatus`.
+## Source and prescriptions
 
-New tables:
+`src/data/workouts/zenith-cards.ts` preserves the supplied `Workout Cards Zenith/src/data.js` content. `src/lib/workouts/catalog.ts` converts it into ordered plans, schedule days, exercise libraries, variations, and trainer notes. Exercise names and variations follow the source. Sets, repetitions, weights, session duration, and cardio are trainer-guided; the app does not invent values. Intermediate and advanced exercises are available options; trainers select the exercises to perform. Completion controls record individual exercises explicitly marked by members.
 
-- `GymStation` stores centralized station mappings.
-- `Exercise` stores exercise metadata, video URLs, instructions, safety notes, equipment type, and optional station relation.
-- `ExerciseVideoCandidate` stores possible videos for records that require owner confirmation. Candidate videos are not rendered to members.
-- `WorkoutPlan`, `WorkoutPlanDay`, and `WorkoutPlanExercise` store the seeded beginner, intermediate, and advanced cards.
-- `MemberWorkoutAssignment` stores the authenticated member user's active or historical plan assignment.
-- `MemberExerciseProgress` stores idempotent per-exercise completion progress.
+## Updating the connected database
 
-## Goal mapping
+Run `node_modules/.bin/tsx scripts/sync-workout-cards.ts` to inspect the replacement and `node_modules/.bin/tsx scripts/sync-workout-cards.ts --apply` to apply it. The update is atomic and touches only workout records. A local reference copy of previous cards, assignments, and progress is saved under `output/workout-cards/` before applying.
 
-Members now choose from these seeded workout cards:
+The old six cards are archived (`active=false`) and removed from member selection, active workout views, workout history, and the admin card list. Their active assignments are marked `REPLACED`; stored assignments and progress are retained. Members choose a new level after replacement. Legacy exercise records are inactive when unused by an active plan.
 
-- Beginner: `zenith-beginner`
-- Intermediate: `zenith-intermediate`
-- Advance: `zenith-advanced`
-- Cardiovascular Endurance: `zenith-cardio-endurance`
-- BodyWeight Only Workout: `zenith-bodyweight-only`
-- Core Variations: `zenith-core-variations`
+`prisma/seed.ts` reuses the same workout sync alongside its existing account/membership seeding. Use the focused sync script for workout-only updates.
 
-The original goal mapping remains as a fallback for compatibility, but the member UI sends an explicit workout plan slug.
+## Videos
 
-## Seed structure
+New cards use separate exercise identities prefixed `zenith-cards-` with no video attached. The seed no longer imports the old video dataset, and the service no longer falls back to seeded videos. The member exercise view displays a player only when a verified video has been added. Admin video editing remains available for the owner to add videos later. Rerunning the sync preserves videos subsequently added by the owner.
 
-Workout seed data lives in `src/lib/workouts/catalog.ts` and is applied by `prisma/seed.ts` using Prisma `upsert` for stations, exercises, plans, days, and day exercises. Exercise slugs are stable and generated from exercise names.
+## Stations and member flow
 
-Exercise video data is seeded from `src/data/workouts/exercises.normalized.json`. The seed stores verified YouTube video IDs and derives privacy-enhanced embed and thumbnail URLs server-side. Admin updates must pass through the YouTube parser; arbitrary iframe HTML is not stored or rendered.
+Existing station mappings remain centralized in `stationMapping`. Members can choose or replace a level, open schedule days, view ordered exercise options and trainer notes, and explicitly mark exercises complete. Cardio, recovery, and rest days display their supplied guidance without fabricated exercises or completion targets.
 
-Owner-confirmation records keep `youtubeVideoId` empty and save candidates for admin review only:
-
-- DB In-Out
-- DB Soccer
-- DB Military Jog
-- DB Rotation
-- Side-to-Side Step
-- Stepper Touch Jack
-- Floor Touch Jack
-- Push-Up Position Toe Touch
-- Military Jog
-- Heel Touch Run
-- Toe Touch Push-Up Position
-- Side Knee Tuck
-- Kick Out
-- Kick Outs
-- Kick-Out Compression
-
-## Station mapping
-
-Machine stations are centralized in `stationMapping` and seeded to `GymStation`. Bodyweight, dumbbell, barbell, core, stepper, TRX, and free-weight movements use zone labels rather than numbered stations.
-
-Current physical machine labels:
-
-- Station 01: Abductor/Adductor Machine
-- Station 02: Incline Chest Press
-- Station 03: Adjustable Bench Press
-- Station 04: Assisted Pull Up
-- Station 05: Pec Fly
-- Station 07: Smith Machine
-- Station 08: MFT Machine
-- Station 09: Flat Chest Press
-- Station 10: Leg Press Machine
-- Station 11: Lat Pull Down
-- Station 12: Leg Extension + Curl
-
-Station 06 is intentionally unused until another machine is added or the floor numbering is changed.
-
-## Member flow
-
-`/workout` is protected by the existing session cookie. Members without an active assignment see workout cards. Selecting a card creates an active assignment for the authenticated user. Members with an assignment see dashboard stats, day cards, continue-workout links, card replacement, and history.
-
-`/workout/day/[dayNumber]` shows ordered exercises. `/workout/exercise/[exerciseId]` shows video, instructions, station, sets, reps or hold duration, and sticky completion controls. Marking an exercise complete automatically opens the next exercise, or returns to the day page after the final exercise.
-
-## Admin flow
-
-`/admin/workouts` is protected by `requireActiveRole([ADMIN])`. Admins can inspect plans, stations, update exercise video/instruction fields, and assign or replace a member plan.
-
-## API contract
-
-- `GET /api/member/workout`: returns active assignment dashboard data for the authenticated member.
-- `POST /api/member/workout`: selects first-time goal.
-- `PUT /api/member/workout`: replaces active goal and plan after member confirmation.
-- `POST /api/member/workout/progress`: marks or undoes one exercise completion.
-- `PATCH /api/member/workout/progress`: updates the current workout day.
-- `GET /api/admin/workouts`: returns admin workout console data.
-- `POST /api/admin/workouts`: assigns or replaces a member plan.
-- `PATCH /api/admin/workouts`: updates exercise metadata.
-
-All writes validate payloads with Zod and derive member identity from the server session for member routes.
-
-## Progress calculation
-
-An exercise is complete only after explicit member action. Completion uses an idempotent `upsert`, so duplicate requests do not create duplicate progress rows. Day completion is calculated from required exercises and completed progress. The current implementation stores alternative groups in the plan data and seeds grouped alternatives; richer per-member alternative switching can be expanded from `MemberExerciseProgress.selected`.
-
-## Production considerations
-
-- Physically label machines using the station list above, or update `stationMapping` before reseeding if the floor layout changes.
-- Add approved local or YouTube embed video URLs through admin tools.
-- Consider stricter active-membership gating if workout access should differ from the existing dashboard policy.
-- Keep advanced plans admin-assigned until a formal progression approval workflow exists.
+Admin workout tools manage exercises, video metadata, card exercise entries, and member assignments. Member API writes derive identity from the authenticated session and validate payloads with Zod.

@@ -16,3 +16,6 @@ android/.idea
 /output/zee/originals/
 /output/zee/qa/
 /.zee-qa/
+
+# Local workout recovery copies contain member assignment history.
+/output/workout-cards/

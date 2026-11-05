@@ -45,7 +45,7 @@ export function PointsView({ data }: { data: Data }) {
       <section className="mt-7 grid gap-4">
         <article className="rounded-3xl border border-amber-300/25 bg-amber-300/[.06] p-6">
           <h2 className="flex items-center gap-2 font-bold"><Medal className="text-amber-300" /> Achievers of the Month</h2>
-          <p className="mt-2 text-sm text-white/60">Members who have earned the most points this calendar month, including visit points, target rewards, and admin awards.</p>
+          <p className="mt-2 text-sm text-white/60">Ranked by daily points earned through attendance or QR scans this calendar month. BMI points, target rewards, and admin awards do not count.</p>
           <p className="mt-2 text-xs text-white/45">{data.monthlyAchievers.length} members - Scroll to see all</p>
           <ol aria-label="Monthly achievers" tabIndex={0} className="mt-4 max-h-[min(60dvh,560px)] space-y-2 overflow-y-auto overscroll-y-contain rounded-xl pr-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-zenith-400">
             {data.monthlyAchievers.length ? data.monthlyAchievers.map((member) => (
@@ -53,7 +53,7 @@ export function PointsView({ data }: { data: Data }) {
                 <span><b className="mr-3">#{member.rank}</b>{member.name} <small className="text-white/35">{member.admissionId}</small><small className="mt-1 block text-white/45">{member.visits} visits</small></span>
                 <b className="shrink-0 text-amber-200">{member.points} points</b>
               </li>
-            )) : <p className="text-sm text-white/40">Monthly achievers will appear once members earn points this month.</p>}
+            )) : <p className="text-sm text-white/40">Monthly achievers will appear once members earn daily attendance or scan points this month.</p>}
           </ol>
         </article>
         <article className="rounded-3xl border border-white/10 bg-white/5 p-6">
