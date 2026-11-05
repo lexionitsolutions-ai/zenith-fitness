@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/database/prisma";
 import { AppError } from "@/lib/errors";
+import { parseYouTubeId, youtubeEmbedUrl } from "@/lib/youtube";
+import { randomUUID } from "node:crypto";
 
 export const functionalBatchSchema = z.object({
   title: z.string().trim().min(2).max(120),
@@ -13,6 +15,7 @@ export const functionalBatchSchema = z.object({
     workSeconds: z.number().int().min(5).max(600).default(40),
     restSeconds: z.number().int().min(0).max(300).default(20),
     repetitions: z.number().int().min(1).max(1000).nullable().optional(),
+    repsPerSecond: z.number().finite().min(0.1).max(5).default(0.5),
   })).min(1).max(50),
 });
 
@@ -52,9 +55,40 @@ export async function createFunctionalBatch(actor: { userId: string; role: Role 
         exercises: { create: data.exercises.map((item, index) => ({
           exerciseId: item.exerciseId, sortOrder: index + 1, workSeconds: item.workSeconds,
           restSeconds: item.restSeconds, repetitions: item.repetitions ?? null,
+          repsPerSecond: item.repsPerSecond,
         })) },
       },
       select: { id: true },
     });
   });
+}
+
+export const functionalVideoSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  videoUrl: z.string().trim().min(1).max(2000),
+  videoStartSeconds: z.number().int().min(0).max(86400).default(0),
+  videoEndSeconds: z.number().int().min(1).max(86400).nullable().optional(),
+  videoLayout: z.enum(["FIT", "CENTER_CROP"]).default("FIT"),
+}).refine((data) => data.videoEndSeconds == null || data.videoEndSeconds > data.videoStartSeconds, {
+  message: "Clip end must be after clip start.", path: ["videoEndSeconds"],
+});
+
+export async function createFunctionalVideo(actor: { userId: string; role: Role }, input: unknown) {
+  if (!canManageFunctionalBatches(actor.role)) throw new AppError("FORBIDDEN", "Only trainers and admins can add workout videos.", 403);
+  const data = functionalVideoSchema.parse(input);
+  const youtubeVideoId = parseYouTubeId(data.videoUrl);
+  let videoUrl: string;
+  if (youtubeVideoId) videoUrl = youtubeEmbedUrl(youtubeVideoId);
+  else {
+    let url: URL;
+    try { url = new URL(data.videoUrl); } catch { throw new AppError("INVALID_VIDEO", "Enter a YouTube link or a direct HTTPS MP4 video link.", 400); }
+    if (url.protocol !== "https:" || !url.pathname.toLowerCase().endsWith(".mp4")) {
+      throw new AppError("INVALID_VIDEO", "Enter a YouTube link or a direct HTTPS MP4 video link.", 400);
+    }
+    videoUrl = url.href;
+  }
+  return prisma.functionalExercise.create({ data: {
+    slug: `trainer-${randomUUID()}`, name: data.name, videoUrl, youtubeVideoId,
+    videoStartSeconds: data.videoStartSeconds, videoEndSeconds: data.videoEndSeconds ?? null, videoLayout: data.videoLayout,
+  }, select: { id: true } });
 }

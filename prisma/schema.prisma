@@ -220,6 +220,9 @@ model FunctionalExercise {
   name           String
   videoUrl       String
   youtubeVideoId String?
+  videoStartSeconds Int @default(0)
+  videoEndSeconds Int?
+  videoLayout String @default("FIT")
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -251,6 +254,7 @@ model FunctionalBatchExercise {
   workSeconds     Int    @default(40)
   restSeconds     Int    @default(20)
   repetitions     Int?
+  repsPerSecond   Float @default(0.5)
   batch           FunctionalBatch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
   exercise        FunctionalExercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
 

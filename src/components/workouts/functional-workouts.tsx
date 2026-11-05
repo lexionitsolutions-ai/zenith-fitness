@@ -1,63 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Activity, ArrowDown, ArrowUp, Check, Clock3, Pause, Play, Plus, RotateCcw, SkipForward, Trash2, X } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Activity, ArrowDown, ArrowUp, Check, Clock3, Play, Plus, Trash2 } from "lucide-react";
 import type { getFunctionalWorkouts } from "@/services/functional-workout.service";
-import { nextCircuitExercise, startCircuit, tickCircuit } from "@/lib/workouts/functional-player";
+import { workDuration } from "@/lib/workouts/functional-player";
+import { BatchPlayer } from "./functional-batch-player";
+import { FunctionalVideo } from "./functional-video";
+import { FunctionalVideoForm } from "./functional-video-form";
 
 type Data = Awaited<ReturnType<typeof getFunctionalWorkouts>>;
 type Batch = Data["batches"][number];
-type DraftExercise = { exerciseId: string; workSeconds: number; restSeconds: number; repetitions: number | null };
+type DraftExercise = { exerciseId: string; workSeconds: number; restSeconds: number; repetitions: number | null; repsPerSecond: number };
 const field = "mt-1 min-h-12 w-full rounded-xl border border-white/15 bg-[#10201b] px-3 text-white";
-const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-
-function BatchPlayer({ batch, initialIndex, onClose }: { batch: Batch; initialIndex: number; onClose: () => void }) {
-  const [state, setState] = useState(() => startCircuit(batch.exercises, initialIndex));
-  const [running, setRunning] = useState(false);
-  const container = useRef<HTMLDivElement>(null);
-  const closeButton = useRef<HTMLButtonElement>(null);
-  const item = batch.exercises[state.index];
-  useEffect(() => {
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeButton.current?.focus();
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-      if (event.key !== "Tab") return;
-      const controls = container.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],video[controls],[tabindex="0"]');
-      const first = controls?.[0], last = controls?.[controls.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-    }
-    document.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); previousFocus?.focus(); };
-  }, [onClose]);
-  useEffect(() => {
-    if (!running || state.phase === "complete") return;
-    const timer = window.setInterval(() => setState((current) => tickCircuit(current, batch.exercises, batch.rounds)), 1000);
-    return () => window.clearInterval(timer);
-  }, [running, state.phase, batch]);
-  if (!item) return null;
-  return <div ref={container} role="dialog" aria-modal="true" aria-labelledby="functional-player-title" className="fixed inset-0 z-50 overflow-y-auto bg-[#07110e]/95 p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur sm:p-8">
-    <div className="mx-auto max-w-3xl rounded-3xl border border-white/15 bg-[#10201b] p-4 sm:p-6">
-      <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-widest text-zenith-400">{batch.title}</p><h2 id="functional-player-title" className="mt-1 text-2xl font-black">{state.phase === "complete" ? "Batch complete" : item.exercise.name}</h2></div>
-        <button ref={closeButton} onClick={onClose} aria-label="Close player" className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-white/10"><X /></button></div>
-      {state.phase === "complete" ? <div className="my-5 rounded-2xl bg-zenith-500/10 p-8 text-center"><Check size={44} className="mx-auto text-zenith-400" /><p className="mt-3 text-xl font-bold">You finished {batch.rounds} {batch.rounds === 1 ? "round" : "rounds"}.</p></div> : <>
-        <div className="relative mt-5 overflow-hidden rounded-2xl bg-black">
-          <video key={item.exercise.id} src={item.exercise.videoUrl} controls autoPlay loop muted playsInline preload="metadata" className="aspect-video w-full object-contain" aria-label={`${item.exercise.name} demonstration`} />
-          {state.phase === "rest" && <div className="absolute inset-0 flex items-center justify-center bg-black/85 text-center"><div><p className="text-xl font-bold">Rest</p><p className="mt-2 text-6xl font-black text-zenith-400">{formatTime(state.seconds)}</p></div></div>}
-        </div>
-        <p className="mt-3 text-sm text-white/60">Exercise {state.index + 1} of {batch.exercises.length} · Round {state.round} of {batch.rounds}{item.repetitions ? ` · ${item.repetitions} reps` : ""}</p>
-        <div className="mt-4 flex items-center justify-between rounded-2xl bg-white/5 p-4"><div><p className="text-xs uppercase tracking-widest text-white/50">{state.phase === "rest" ? "Rest timer" : "Exercise timer"}</p><p className="text-4xl font-black tabular-nums text-zenith-400">{formatTime(state.seconds)}</p></div><button onClick={() => setRunning(!running)} className="flex min-h-12 items-center gap-2 rounded-xl bg-zenith-500 px-5 font-bold text-slate-950">{running ? <Pause size={18} /> : <Play size={18} />}{running ? "Pause timer" : "Start timer"}</button></div>
-        <p className="mt-3 text-xs text-white/45">The demo loops for practice. Start the timer when you are ready; it moves through work, rest, and each round.</p>
-      </>}
-      <div className="mt-4 flex flex-wrap gap-2"><button onClick={() => { setState(startCircuit(batch.exercises)); setRunning(false); }} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white/10 px-4"><RotateCcw size={16} />Restart</button>
-        {state.phase !== "complete" && <button onClick={() => setState(nextCircuitExercise(state, batch.exercises, batch.rounds))} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white/10 px-4"><SkipForward size={16} />Next exercise</button>}</div>
-      <ol className="mt-5 space-y-2">{batch.exercises.map((entry, index) => <li key={entry.id}><button onClick={() => { setState(startCircuit(batch.exercises, index)); setRunning(false); }} aria-current={index === state.index ? "step" : undefined} className={`flex min-h-12 w-full items-center justify-between gap-2 rounded-xl px-3 text-left text-sm ${index === state.index ? "bg-zenith-500/15 text-zenith-300" : "bg-white/5 text-white/60"}`}><span>{index + 1}. {entry.exercise.name}</span><Play size={15} /></button></li>)}</ol>
-    </div>
-  </div>;
-}
+const formatTime = (seconds: number) => `${Math.floor(Math.ceil(seconds) / 60)}:${String(Math.ceil(seconds) % 60).padStart(2, "0")}`;
 
 function BatchBuilder({ exercises, onSaved, onCancel }: { exercises: Data["exercises"]; onSaved: (id: string) => Promise<void>; onCancel: () => void }) {
   const [title, setTitle] = useState("");
@@ -92,7 +47,7 @@ function BatchBuilder({ exercises, onSaved, onCancel }: { exercises: Data["exerc
     <section className="rounded-3xl border border-white/10 bg-white/[.04] p-5"><h3 className="font-bold">Exercise library</h3><label className="mt-3 block text-sm text-white/60">Find an exercise<input type="search" value={search} onChange={(e) => setSearch(e.target.value)} className={field} placeholder="Search exercises" /></label>
       <div className="mt-4 grid gap-2 sm:grid-cols-2">{exercises.filter((item) => item.name.toLowerCase().includes(search.toLowerCase())).map((item) => {
         const isSelected = selected.some((entry) => entry.exerciseId === item.id);
-        return <button type="button" key={item.id} aria-pressed={isSelected} onClick={() => setSelected((items) => isSelected ? items.filter((entry) => entry.exerciseId !== item.id) : [...items, { exerciseId: item.id, workSeconds: 40, restSeconds: 20, repetitions: null }])} className={`flex min-h-12 items-center justify-between rounded-xl border px-3 text-left text-sm ${isSelected ? "border-zenith-400/40 bg-zenith-500/10 text-zenith-300" : "border-white/10 bg-black/20"}`}><span>{item.name}</span>{isSelected ? <Check size={18} /> : <Plus size={18} />}</button>;
+        return <button type="button" key={item.id} aria-pressed={isSelected} onClick={() => setSelected((items) => isSelected ? items.filter((entry) => entry.exerciseId !== item.id) : [...items, { exerciseId: item.id, workSeconds: 40, restSeconds: 20, repetitions: null, repsPerSecond: 0.5 }])} className={`flex min-h-12 items-center justify-between rounded-xl border px-3 text-left text-sm ${isSelected ? "border-zenith-400/40 bg-zenith-500/10 text-zenith-300" : "border-white/10 bg-black/20"}`}><span>{item.name}</span>{isSelected ? <Check size={18} /> : <Plus size={18} />}</button>;
       })}</div>
     </section>
     <section className="rounded-3xl border border-white/10 bg-white/[.04] p-5"><h3 className="font-bold">Batch order · {selected.length} exercises</h3>
@@ -103,9 +58,11 @@ function BatchBuilder({ exercises, onSaved, onCancel }: { exercises: Data["exerc
           <button type="button" disabled={index === selected.length - 1} onClick={() => move(index, 1)} aria-label={`Move exercise ${index + 1} down`} className="min-h-11 min-w-11 rounded-xl bg-white/5 p-3 disabled:opacity-25"><ArrowDown size={16} /></button>
           <button type="button" onClick={() => setSelected((items) => items.filter((_, i) => i !== index))} aria-label={`Remove exercise ${index + 1}`} className="min-h-11 min-w-11 rounded-xl bg-white/5 p-3 text-red-300"><Trash2 size={16} /></button>
         </div></div>
-        <div className="mt-3 grid grid-cols-3 gap-2"><label className="text-xs text-white/60">Work (sec)<input required type="number" min={5} max={600} value={entry.workSeconds} onChange={(e) => change(index, { workSeconds: Number(e.target.value) })} className={field} /></label>
+        <div className="mt-3 grid grid-cols-2 gap-3"><label className="text-xs text-white/60">Work (sec)<input required type="number" min={5} max={600} value={entry.workSeconds} onChange={(e) => change(index, { workSeconds: Number(e.target.value) })} className={field} /></label>
           <label className="text-xs text-white/60">Rest (sec)<input required type="number" min={0} max={300} value={entry.restSeconds} onChange={(e) => change(index, { restSeconds: Number(e.target.value) })} className={field} /></label>
-          <label className="text-xs text-white/60">Reps (optional)<input type="number" min={1} max={1000} value={entry.repetitions ?? ""} onChange={(e) => change(index, { repetitions: e.target.value ? Number(e.target.value) : null })} className={field} /></label></div>
+          <label className="text-xs text-white/60">Reps (optional)<input type="number" min={1} max={1000} value={entry.repetitions ?? ""} onChange={(e) => change(index, { repetitions: e.target.value ? Number(e.target.value) : null })} className={field} /></label>
+          <label className="text-xs text-white/60">Reps per second<input required type="number" min={0.1} max={5} step={0.05} value={entry.repsPerSecond} onChange={(e) => change(index, { repsPerSecond: Number(e.target.value) })} className={field} /></label></div>
+        <p className="mt-2 text-xs text-white/45">{entry.repetitions ? `${entry.repetitions} reps at ${entry.repsPerSecond} reps/sec = ${formatTime(workDuration(entry))}. Rep target takes priority over work time.` : `Timed exercise; counter follows ${entry.repsPerSecond} reps/sec.`}</p>
       </li>)}</ol>
     </section>
     {error && <p role="alert" className="rounded-2xl bg-red-400/10 p-4 text-sm text-red-200">{error}</p>}
@@ -116,31 +73,44 @@ function BatchBuilder({ exercises, onSaved, onCancel }: { exercises: Data["exerc
 export function FunctionalWorkouts({ initialData, canManage }: { initialData: Data; canManage: boolean }) {
   const [data, setData] = useState(initialData);
   const [creating, setCreating] = useState(false);
+  const [addingVideo, setAddingVideo] = useState(false);
   const [playing, setPlaying] = useState<{ batch: Batch; index: number } | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   // Keep server refreshes in sync after switching workout tabs.
   useEffect(() => setData(initialData), [initialData]);
-  async function onSaved(id: string) {
+  async function refreshLibrary() {
     const response = await fetch("/api/workout/functional", { cache: "no-store" });
     if (!response.ok) throw new Error("Batch saved. Refresh Workouts to load the latest batches.");
     const result = await response.json();
-    setData(result.data); setCreating(false); setSaved(id);
+    setData(result.data);
+  }
+  async function onSaved(id: string) {
+    await refreshLibrary(); setCreating(false); setSaved(id);
+  }
+  function openPlayer(batch: Batch, index: number) {
+    document.querySelectorAll("video").forEach((video) => video.pause());
+    setPlaying({ batch, index });
   }
   return <main className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:px-8">
     <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-widest text-zenith-400">Train together</p><h1 className="mt-2 text-3xl font-black">Functional batches</h1><p className="mt-2 max-w-xl text-sm text-white/55">Follow your trainer’s exercise order. Play the demos and train with the batch timer.</p></div>
-      {canManage && <div className="flex gap-2 rounded-2xl bg-white/5 p-1"><button onClick={() => setCreating(false)} aria-pressed={!creating} className={`min-h-11 rounded-xl px-4 text-sm font-bold ${!creating ? "bg-white/10 text-white" : "text-white/50"}`}>View batches</button><button onClick={() => { setCreating(true); setSaved(null); }} aria-pressed={creating} className={`flex min-h-11 items-center gap-1 rounded-xl px-4 text-sm font-bold ${creating ? "bg-zenith-500 text-slate-950" : "text-zenith-400"}`}><Plus size={16} />Create batch</button></div>}
+      {canManage && <div className="flex flex-wrap gap-1 rounded-2xl bg-white/5 p-1"><button onClick={() => { setCreating(false); setAddingVideo(false); }} aria-pressed={!creating && !addingVideo} className="min-h-11 rounded-xl px-3 text-sm font-bold">View batches</button><button onClick={() => { setCreating(true); setAddingVideo(false); setSaved(null); }} aria-pressed={creating} className={`flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-bold ${creating ? "bg-zenith-500 text-slate-950" : "text-zenith-400"}`}><Plus size={16} />Create batch</button><button onClick={() => { setCreating(false); setAddingVideo(true); }} aria-pressed={addingVideo} className={`min-h-11 rounded-xl px-3 text-sm font-bold ${addingVideo ? "bg-zenith-500 text-slate-950" : "text-zenith-400"}`}>Add video</button></div>}
     </header>
     {saved && !creating && <p role="status" className="mt-5 rounded-2xl border border-zenith-400/25 bg-zenith-500/10 p-4 text-sm text-zenith-300">Batch saved. Members can now view and play it in Functional Batch.</p>}
-    {creating && canManage ? <BatchBuilder exercises={data.exercises} onSaved={onSaved} onCancel={() => setCreating(false)} /> : <section aria-label="Available functional batches" className="mt-6 grid items-start gap-4 md:grid-cols-2">
+    {addingVideo && canManage ? <FunctionalVideoForm onSaved={refreshLibrary} /> : creating && canManage ? <BatchBuilder exercises={data.exercises} onSaved={onSaved} onCancel={() => setCreating(false)} /> : <section aria-label="Available functional batches" className="mx-auto mt-6 max-w-3xl space-y-6">
       {!data.batches.length && <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-white/60">No functional batches yet.{canManage ? " Create the first batch for members." : " Your trainer’s batches will appear here."}</div>}
       {data.batches.map((batch) => <article key={batch.id} className={`overflow-hidden rounded-3xl border bg-white/[.04] ${saved === batch.id ? "border-zenith-400/50" : "border-white/10"}`}>
         <div className="p-5"><div className="flex items-start justify-between gap-3"><span className="rounded-2xl bg-zenith-500/10 p-3 text-zenith-400"><Activity /></span><span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/65">{batch.rounds} {batch.rounds === 1 ? "round" : "rounds"}</span></div>
           <h2 className="mt-4 text-xl font-black">{batch.title}</h2>{batch.description && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-white/55">{batch.description}</p>}
           {batch.scheduledAt && <p className="mt-3 text-sm text-zenith-300">{new Date(batch.scheduledAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST</p>}
-          <p className="mt-3 flex items-center gap-2 text-xs text-white/45"><Clock3 size={14} />{batch.exercises.length} exercises · {formatTime(batch.exercises.reduce((sum, item) => sum + item.workSeconds + item.restSeconds, 0) * batch.rounds - (batch.exercises.at(-1)?.restSeconds ?? 0))} circuit</p>
+          <p className="mt-3 flex items-center gap-2 text-xs text-white/45"><Clock3 size={14} />{batch.exercises.length} exercises · {formatTime(batch.exercises.reduce((sum, item) => sum + workDuration(item) + item.restSeconds, 0) * batch.rounds - (batch.exercises.at(-1)?.restSeconds ?? 0))} circuit</p>
           {batch.createdBy && <p className="mt-2 text-xs text-white/40">By {batch.createdBy.displayName ?? (batch.createdBy.role === "ADMIN" ? "Admin" : "Trainer")}</p>}
-          <button disabled={!batch.exercises.length} onClick={() => setPlaying({ batch, index: 0 })} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zenith-500 px-4 font-bold text-slate-950 disabled:opacity-40"><Play size={18} />Play batch</button>
-        </div><ol className="border-t border-white/10 p-3">{batch.exercises.map((item, index) => <li key={item.id}><button onClick={() => setPlaying({ batch, index })} aria-label={`Play ${item.exercise.name}`} className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left hover:bg-white/5"><div><p className="text-sm font-bold"><span className="mr-2 text-white/30">{String(index + 1).padStart(2, "0")}</span>{item.exercise.name}</p><p className="mt-1 pl-6 text-xs text-white/45">{item.workSeconds}s work · {item.restSeconds}s rest{item.repetitions ? ` · ${item.repetitions} reps` : ""}</p></div><Play size={17} className="shrink-0 text-zenith-400" /></button></li>)}</ol>
+          <button disabled={!batch.exercises.length} onClick={() => openPlayer(batch, 0)} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-zenith-500 px-4 font-bold text-slate-950 disabled:opacity-40"><Play size={18} />Play batch</button>
+        </div><ol className="space-y-4 border-t border-white/10 p-3">{batch.exercises.map((item, index) => <li key={item.id} className="overflow-hidden rounded-2xl bg-[#12263A] p-3">
+          <h3 className="mb-2 text-base font-bold text-zenith-300">{index + 1}. {item.exercise.name}</h3>
+          <div className="mx-auto aspect-[9/16] w-full max-w-[300px] overflow-hidden rounded-xl bg-black"><FunctionalVideo exercise={item.exercise} preview /></div>
+          <p className="mt-3 text-xs text-white/55">{item.repetitions ? `${item.repetitions} reps` : `${item.workSeconds}s work`} · {item.repsPerSecond} reps/sec · {item.restSeconds}s rest</p>
+          <button onClick={() => openPlayer(batch, index)} aria-label={`Play ${item.exercise.name}`} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white/10 text-sm font-bold"><Play size={16} />Train with rep counter</button>
+        </li>)}</ol>
       </article>)}
     </section>}
     {playing && <BatchPlayer batch={playing.batch} initialIndex={playing.index} onClose={() => setPlaying(null)} />}
