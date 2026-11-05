@@ -163,6 +163,16 @@ export async function getAdminWorkoutConsole() {
   return { plans, exercises, stations, members };
 }
 
+export async function getWeightTrainingLibrary() {
+  return prisma.workoutPlan.findMany({
+    where: { active: true, slug: { in: goalCards.map((card) => card.planSlug) } },
+    orderBy: { slug: "asc" },
+    select: { id: true, name: true, description: true, days: { orderBy: { sortOrder: "asc" },
+      select: { id: true, title: true, description: true, exercises: { orderBy: { sortOrder: "asc" },
+        select: { id: true, sectionName: true, notes: true, exercise: { select: { name: true } } } } } } },
+  });
+}
+
 export async function adminAddWorkoutCardExercise(input: unknown) {
   const data = workoutCardExerciseCreateSchema.parse(input);
   if (data.minimumReps != null && data.maximumReps != null && data.maximumReps < data.minimumReps) {

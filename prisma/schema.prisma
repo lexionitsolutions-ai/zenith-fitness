@@ -211,6 +211,51 @@ model User {
   handledPasswordResets    PasswordResetRequest[] @relation("PasswordResetHandledBy")
   applicantProfile         ApplicantProfile?
   membershipOrders         MembershipOrder[]
+  functionalBatches        FunctionalBatch[]
+}
+
+model FunctionalExercise {
+  id             String   @id @default(uuid()) @db.Uuid
+  slug           String   @unique
+  name           String
+  videoUrl       String
+  youtubeVideoId String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  batchExercises FunctionalBatchExercise[]
+}
+
+model FunctionalBatch {
+  id          String   @id @default(uuid()) @db.Uuid
+  sourceKey   String?  @unique
+  title       String
+  description String?  @db.Text
+  rounds      Int      @default(1)
+  scheduledAt DateTime?
+  active      Boolean  @default(true)
+  createdById String?  @db.Uuid
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  exercises   FunctionalBatchExercise[]
+
+  @@index([active, createdAt])
+}
+
+model FunctionalBatchExercise {
+  id              String @id @default(uuid()) @db.Uuid
+  batchId         String @db.Uuid
+  exerciseId      String @db.Uuid
+  sortOrder       Int
+  workSeconds     Int    @default(40)
+  restSeconds     Int    @default(20)
+  repetitions     Int?
+  batch           FunctionalBatch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  exercise        FunctionalExercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  @@unique([batchId, sortOrder])
+  @@index([exerciseId])
 }
 
 // App accounts exist independently of a gym admission or attendance QR.

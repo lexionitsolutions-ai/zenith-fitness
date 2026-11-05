@@ -19,3 +19,4 @@ android/.idea
 
 # Local workout recovery copies contain member assignment history.
 /output/workout-cards/
+/output/functional-qa/

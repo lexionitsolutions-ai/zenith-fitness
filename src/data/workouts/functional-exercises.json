@@ -1,0 +1,16 @@
+[
+  { "slug": "jump-squats", "name": "Jump Squats", "file": "jump_squats.mp4", "youtubeVideoId": "5xv0DKqe5XQ" },
+  { "slug": "mountain-climbers", "name": "Mountain Climbers", "file": "mountain_climbers.mp4", "youtubeVideoId": "kLh-uczlPLg" },
+  { "slug": "bicycle-crunch", "name": "Bicycle Crunch", "file": "bicycle_crunch.mp4", "youtubeVideoId": null },
+  { "slug": "burpees", "name": "Burpees", "file": "burpees.mp4", "youtubeVideoId": null },
+  { "slug": "glute-bridge", "name": "Glute Bridge", "file": "glute_bridge.mp4", "youtubeVideoId": null },
+  { "slug": "high-knees", "name": "High Knees", "file": "high_knees.mp4", "youtubeVideoId": null },
+  { "slug": "jumping-jacks", "name": "Jumping Jacks", "file": "jumping_jacks.mp4", "youtubeVideoId": null },
+  { "slug": "lunges", "name": "Lunges", "file": "lunges.mp4", "youtubeVideoId": null },
+  { "slug": "plank-hold", "name": "Plank Hold", "file": "plank_hold.mp4", "youtubeVideoId": null },
+  { "slug": "plank-shoulder-tap", "name": "Plank Shoulder Tap", "file": "plank_shoulder_tap.mp4", "youtubeVideoId": null },
+  { "slug": "push-ups", "name": "Push Ups", "file": "push_ups.mp4", "youtubeVideoId": null },
+  { "slug": "skaters", "name": "Skaters", "file": "skaters.mp4", "youtubeVideoId": null },
+  { "slug": "squats", "name": "Squats", "file": "squats.mp4", "youtubeVideoId": null },
+  { "slug": "wall-sit", "name": "Wall Sit", "file": "wall_sit.mp4", "youtubeVideoId": null }
+]

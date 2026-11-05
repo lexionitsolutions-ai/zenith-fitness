@@ -4,16 +4,34 @@ import { MemberBottomNav } from "@/components/layout/member-bottom-nav";
 import { GoalSelection, WorkoutDashboard } from "@/components/workouts/workout-client";
 import { getSession } from "@/lib/auth/session";
 import { availableGoalCards, getActiveWorkout } from "@/services/workout.service";
+import { WorkoutModeToggle } from "@/components/workouts/workout-mode-toggle";
+import { FunctionalWorkouts } from "@/components/workouts/functional-workouts";
+import { canManageFunctionalBatches, getFunctionalWorkouts } from "@/services/functional-workout.service";
+import { RoleBottomNav } from "@/components/layout/role-bottom-nav";
+import { WorkoutAdmin } from "@/components/admin/workout-admin";
+import { getAdminWorkoutConsole, getWeightTrainingLibrary } from "@/services/workout.service";
+import { WeightTrainingLibrary } from "@/components/workouts/weight-training-library";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {
   const session = await getSession();
-  if (!session || session.role !== "MEMBER") redirect("/login");
-  const workout = await getActiveWorkout(session.userId);
+  if (!session) redirect("/login");
+  const mode = (await searchParams).mode === "functional" ? "functional" : "weight";
+  let content;
+  if (mode === "functional") {
+    content = <FunctionalWorkouts initialData={await getFunctionalWorkouts()} canManage={canManageFunctionalBatches(session.role)} />;
+  } else if (session.role === "ADMIN") {
+    content = <WorkoutAdmin data={await getAdminWorkoutConsole()} />;
+  } else if (session.role === "STAFF") {
+    content = <WeightTrainingLibrary plans={await getWeightTrainingLibrary()} />;
+  } else {
+    const workout = await getActiveWorkout(session.userId);
+    content = workout ? <WorkoutDashboard workout={workout} cards={availableGoalCards()} /> : <GoalSelection goals={availableGoalCards()} />;
+  }
   return <>
-    <div className="app-topbar border-b border-white/10"><div className="safe-x mx-auto flex max-w-5xl items-center px-4 py-3 sm:px-8"><ZenithLogo compact /></div></div>
-    {workout ? <WorkoutDashboard workout={workout} cards={availableGoalCards()} /> : <GoalSelection goals={availableGoalCards()} />}
-    <MemberBottomNav active="workout" />
+    <div className="app-topbar border-b border-white/10"><div className="safe-x mx-auto max-w-5xl px-4 py-3 sm:px-8"><ZenithLogo compact /><div className="mt-3"><WorkoutModeToggle mode={mode} /></div></div></div>
+    {content}
+    {session.role === "MEMBER" ? <MemberBottomNav active="workout" /> : <RoleBottomNav role={session.role} />}
   </>;
 }

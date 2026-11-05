@@ -33,7 +33,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
           { href: "/admin/notifications", label: "Notify", icon: Bell },
           { href: "/admin/staff", label: "Staff", icon: Users },
-          { href: "/admin/workouts", label: "Workouts", icon: Dumbbell },
+          { href: "/workout", label: "Workouts", icon: Dumbbell },
           { href: "/staff/points", label: "Adjust", icon: SlidersHorizontal },
         ]
       : [
@@ -41,6 +41,7 @@ export function RoleBottomNav({ role }: { role: "ADMIN" | "STAFF" }) {
           { href: "/staff/members", label: "Members", icon: UserRoundCog },
           { href: "/staff/progress", label: "Progress", icon: TrendingUp },
           { href: "/staff/points", label: "Points", icon: SlidersHorizontal },
+          { href: "/workout", label: "Workouts", icon: Dumbbell },
         ];
 
   async function logout() {
