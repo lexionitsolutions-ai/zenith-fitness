@@ -1,5 +1,7 @@
 # Functional batches
 
+**Current status:** Functional Batch is temporarily hidden behind a Coming Soon screen for all roles. The top workout toggle remains available, and weight training continues normally. Existing functional data and implementation are retained for later work; the page does not load or render functional batch records while hidden. The sections below document the retained implementation.
+
 `/workout` has a top switch between Weight Training and Functional Batch (`?mode=weight` / `?mode=functional`). Existing member level selection, daily exercises, and admin weight-training tools remain available. Staff can browse weight-training plans and use functional batches. The old admin workouts URL redirects to the unified workout page.
 
 ## Roles

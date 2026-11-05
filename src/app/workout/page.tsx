@@ -5,8 +5,7 @@ import { GoalSelection, WorkoutDashboard } from "@/components/workouts/workout-c
 import { getSession } from "@/lib/auth/session";
 import { availableGoalCards, getActiveWorkout } from "@/services/workout.service";
 import { WorkoutModeToggle } from "@/components/workouts/workout-mode-toggle";
-import { FunctionalWorkouts } from "@/components/workouts/functional-workouts";
-import { canManageFunctionalBatches, getFunctionalWorkouts } from "@/services/functional-workout.service";
+import { FunctionalComingSoon } from "@/components/workouts/functional-coming-soon";
 import { RoleBottomNav } from "@/components/layout/role-bottom-nav";
 import { WorkoutAdmin } from "@/components/admin/workout-admin";
 import { getAdminWorkoutConsole, getWeightTrainingLibrary } from "@/services/workout.service";
@@ -20,7 +19,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
   const mode = (await searchParams).mode === "functional" ? "functional" : "weight";
   let content;
   if (mode === "functional") {
-    content = <FunctionalWorkouts initialData={await getFunctionalWorkouts()} canManage={canManageFunctionalBatches(session.role)} />;
+    content = <FunctionalComingSoon />;
   } else if (session.role === "ADMIN") {
     content = <WorkoutAdmin data={await getAdminWorkoutConsole()} />;
   } else if (session.role === "STAFF") {
