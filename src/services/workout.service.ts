@@ -81,8 +81,18 @@ export async function selectWorkoutGoal(memberUserId: string, input: unknown) {
     ? await prisma.workoutPlan.findFirst({ where: { slug: planSlug, active: true }, select: { id: true } }) : null;
   if (!plan) throw new AppError("WORKOUT_PLAN_MISSING", "Workout plan is not available yet.", 400);
   return prisma.$transaction(async (tx) => {
-    const active = await tx.memberWorkoutAssignment.findFirst({ where: { memberId: memberUserId, status: "ACTIVE" } });
-    if (active) throw new AppError("WORKOUT_EXISTS", "You already have an active workout plan.", 409);
+    const active = await tx.memberWorkoutAssignment.findFirst({
+      where: { memberId: memberUserId, status: "ACTIVE" }, orderBy: { assignedAt: "desc" },
+      include: { workoutPlan: { select: { active: true, slug: true } } },
+    });
+    // Retried taps can reuse the selected card; retired cards must not block a new level.
+    if (active?.workoutPlanId === plan.id) return active;
+    if (active?.workoutPlan.active && goalCards.some((card) => card.planSlug === active.workoutPlan.slug)) {
+      throw new AppError("WORKOUT_EXISTS", "You already have an active workout level. Open Workouts to continue or change your level.", 409);
+    }
+    await tx.memberWorkoutAssignment.updateMany({
+      where: { memberId: memberUserId, status: "ACTIVE" }, data: { status: "REPLACED", completedAt: new Date() },
+    });
     return tx.memberWorkoutAssignment.create({ data: { memberId: memberUserId, workoutPlanId: plan.id, fitnessGoal, startedAt: new Date() } });
   });
 }

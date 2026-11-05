@@ -51,7 +51,7 @@ function WorkoutCard({
         onClick={onChoose}
         className="mt-5 min-h-11 w-full rounded-2xl bg-white px-4 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-45"
       >
-        {active ? "Selected Today" : "Follow This Card"}
+        {active ? "Current Level" : busy ? "Opening workouts..." : "Follow This Card"}
       </button>
     </article>
   );
@@ -60,29 +60,42 @@ function WorkoutCard({
 export function GoalSelection({ goals }: { goals: GoalCard[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function select(fitnessGoal: string, workoutPlanSlug: string) {
     setBusy(workoutPlanSlug);
-    const response = await fetch("/api/member/workout", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ fitnessGoal, workoutPlanSlug }),
-    });
-    setBusy(null);
-    if (response.ok) router.refresh();
+    setError(null);
+    try {
+      const response = await fetch("/api/member/workout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fitnessGoal, workoutPlanSlug }),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error?.message ?? "Unable to select this workout card. Please try again.");
+      }
+      router.push("/workout/day/1");
+      router.refresh();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to select this workout card. Please try again.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-28 pt-6 sm:px-8">
       <p className="text-sm font-semibold uppercase tracking-widest text-zenith-400">Workout cards</p>
       <h1 className="mt-2 text-3xl font-black">Choose your workout card</h1>
+      {error && <p role="alert" className="mt-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{error}</p>}
       <section className="mt-6 grid gap-4 md:grid-cols-2">
         {goals.map((goal, index) => (
           <WorkoutCard
             key={goal.planSlug}
             card={goal}
             index={index}
-            busy={busy === goal.planSlug}
+            busy={busy !== null}
             onChoose={() => select(goal.goal, goal.planSlug)}
           />
         ))}
@@ -94,17 +107,29 @@ export function GoalSelection({ goals }: { goals: GoalCard[] }) {
 export function WorkoutDashboard({ workout, cards }: { workout: Workout; cards: GoalCard[] }) {
   const summary = workout.summary;
   const [changing, setChanging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function changePlan(card: GoalCard) {
     setChanging(true);
-    const response = await fetch("/api/member/workout", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ fitnessGoal: card.goal, workoutPlanSlug: card.planSlug }),
-    });
-    setChanging(false);
-    if (response.ok) router.refresh();
+    setError(null);
+    try {
+      const response = await fetch("/api/member/workout", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fitnessGoal: card.goal, workoutPlanSlug: card.planSlug }),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error?.message ?? "Unable to change your workout level. Please try again.");
+      }
+      router.push("/workout/day/1");
+      router.refresh();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to change your workout level. Please try again.");
+    } finally {
+      setChanging(false);
+    }
   }
 
   return (
@@ -138,17 +163,7 @@ export function WorkoutDashboard({ workout, cards }: { workout: Workout; cards: 
         </div>
       </header>
 
-      <section className="mt-6">
-        <p className="text-sm font-semibold uppercase tracking-widest text-zenith-400">Available cards</p>
-        <h2 className="mt-1 text-2xl font-black">Choose today's workout card</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {cards.map((card, index) => {
-            const active = card.planSlug === summary.planSlug;
-            return <WorkoutCard key={card.planSlug} card={card} index={index} active={active} busy={changing} onChoose={() => changePlan(card)} />;
-          })}
-        </div>
-      </section>
-
+      <h2 className="mt-6 text-2xl font-black">Your workout schedule</h2>
       <section className="mt-6 grid gap-4 md:grid-cols-2">
         {workout.days.map((day) => (
           <article key={day.id} className="rounded-3xl border border-white/10 bg-white/[.04] p-5">
@@ -176,6 +191,13 @@ export function WorkoutDashboard({ workout, cards }: { workout: Workout; cards: 
           </article>
         ))}
       </section>
+      <details className="mt-6 rounded-3xl border border-white/10 bg-white/[.04] p-5">
+        <summary className="cursor-pointer text-xl font-bold">Change workout level</summary>
+        {error && <p role="alert" className="mt-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">{error}</p>}
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {cards.map((card, index) => <WorkoutCard key={card.planSlug} card={card} index={index} active={card.planSlug === summary.planSlug} busy={changing} onChoose={() => changePlan(card)} />)}
+        </div>
+      </details>
     </main>
   );
 }

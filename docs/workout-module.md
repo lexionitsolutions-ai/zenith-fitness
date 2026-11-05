@@ -26,4 +26,6 @@ New cards use separate exercise identities prefixed `zenith-cards-` with no vide
 
 Existing station mappings remain centralized in `stationMapping`. Members can choose or replace a level, open schedule days, view ordered exercise options and trainer notes, and explicitly mark exercises complete. Cardio, recovery, and rest days display their supplied guidance without fabricated exercises or completion targets.
 
+Following a card opens Day 1 directly. The workout dashboard lists the current schedule first; level switching is under “Change workout level.” Selection failures are shown inline. Retried selections reuse the same assignment, and an active assignment to an archived card is retired automatically when choosing a new level.
+
 Admin workout tools manage exercises, video metadata, card exercise entries, and member assignments. Member API writes derive identity from the authenticated session and validate payloads with Zod.
