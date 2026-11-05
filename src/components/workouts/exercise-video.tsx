@@ -14,10 +14,13 @@ declare global {
   }
 }
 
-type YouTubePlayer = {
+export type YouTubePlayer = {
   destroy: () => void;
   getCurrentTime?: () => number;
   playVideo?: () => void;
+  pauseVideo?: () => void;
+  mute?: () => void;
+  getIframe?: () => HTMLIFrameElement;
   seekTo?: (seconds: number, allowSeekAhead: boolean) => void;
 };
 
@@ -31,7 +34,7 @@ type Props = {
 
 const playerReadyCallbacks: Array<() => void> = [];
 
-function loadYouTubeApi(callback: () => void) {
+export function loadYouTubeApi(callback: () => void) {
   if (window.YT?.Player) return callback();
   playerReadyCallbacks.push(callback);
   if (document.querySelector("script[src='https://www.youtube.com/iframe_api']")) return;

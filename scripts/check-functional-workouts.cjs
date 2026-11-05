@@ -34,6 +34,7 @@ async function main() {
   checks.anonymousAccessDenied = true;
 
   const staffPage = await staff.context.newPage();
+  staffPage.on('pageerror', error => console.log(JSON.stringify({ browserError: error.message.slice(0, 400) })));
   staffPage.setDefaultTimeout(60000);
   await staffPage.goto(`${origin}/workout?mode=functional`);
   await staffPage.getByRole('heading', { name: 'Functional batches', exact: true }).waitFor();
@@ -48,11 +49,20 @@ async function main() {
   const savedVideo = await videoSaved;
   assert(savedVideo.status() === 201, 'Trainer video creation must succeed');
   videoIds.push((await savedVideo.json()).data.id);
-  await staffPage.getByRole('status').filter({ hasText: 'Video saved' }).waitFor();
+  try { await staffPage.getByRole('status').filter({ hasText: 'Video saved' }).waitFor({ timeout: 15000 }); }
+  catch (error) {
+    await staffPage.screenshot({ path: 'output/functional-qa/video-save-error.png', fullPage: true });
+    console.log(JSON.stringify({ videoSaveStatus: await staffPage.getByRole('status').allTextContents(), currentUrl: staffPage.url() }));
+    const refresh = await staff.context.request.get(`${origin}/api/workout/functional`);
+    const body = await refresh.json();
+    console.log(JSON.stringify({ refreshedLibrary: { status: refresh.status(), error: body.error, batches: body.data?.batches?.length, videos: body.data?.exercises?.length } }));
+    throw error;
+  }
   const clip = await db.functionalExercise.findUnique({ where: { id: videoIds[0] } });
   assert(clip.videoStartSeconds === 35 && clip.videoEndSeconds === 40 && clip.videoLayout === 'CENTER_CROP', 'Trainer video clip settings must persist');
   checks.trainerCanSaveOwnVideoClips = true;
   await staffPage.getByRole('button', { name: 'Create batch', exact: true }).click();
+  await staffPage.getByRole('button', { name: 'QA trainer video clip', exact: true }).waitFor();
   await staffPage.getByLabel('Batch name').fill('QA trainer functional circuit');
   await staffPage.getByLabel('Rounds', { exact: true }).fill('1');
   await staffPage.getByRole('button', { name: 'Jump Squats', exact: true }).click();
@@ -92,6 +102,11 @@ async function main() {
 
   const memberPage = await member.context.newPage();
   memberPage.setDefaultTimeout(60000);
+  let delayWorkMedia = false;
+  await memberPage.route('**/workouts/functional/mountain_climbers.mp4', async route => {
+    if (delayWorkMedia) await new Promise(resolve => setTimeout(resolve, 1500));
+    await route.continue();
+  });
   await memberPage.goto(`${origin}/workout?mode=functional`);
   await memberPage.getByRole('heading', { name: 'QA trainer functional circuit', exact: true }).waitFor();
   assert(await memberPage.getByRole('button', { name: 'Create batch', exact: true }).count() === 0, 'Member must not get creation controls');
@@ -102,12 +117,18 @@ async function main() {
   checks.memberCanSeeSavedBatchButCannotCreate = true;
   await memberPage.screenshot({ path: 'output/functional-qa/member-batches-mobile.png', fullPage: true });
   const card = memberPage.getByRole('article').filter({ has: memberPage.getByRole('heading', { name: 'QA trainer functional circuit', exact: true }) });
+  delayWorkMedia = true;
   await card.getByRole('button', { name: 'Play batch', exact: true }).click();
   const player = memberPage.getByRole('dialog');
   await player.waitFor();
   assert(await player.locator('[data-testid="portrait-player"]').evaluate(el => el.clientHeight > el.clientWidth), 'Workout player must be portrait');
   checks.portraitVideoPlayer = true;
   await player.getByRole('button', { name: 'Start workout', exact: true }).click();
+  await player.getByRole('status').filter({ hasText: 'Loading video' }).waitFor();
+  await memberPage.waitForTimeout(400);
+  assert(await player.getByLabel('Paced rep count', { exact: true }).textContent() === '0', 'Reps must not count before the media starts');
+  checks.bufferingDoesNotConsumeReps = true;
+  delayWorkMedia = false;
   await memberPage.waitForFunction(() => { const v = document.querySelector('[role="dialog"] video'); return v && v.readyState >= 2 && v.videoWidth > 0 && v.currentTime > 0; });
   checks.memberVideoDecodesAndPlays = true;
   await memberPage.waitForFunction(() => Number(document.querySelector('output[aria-label="Paced rep count"]')?.textContent) >= 1);

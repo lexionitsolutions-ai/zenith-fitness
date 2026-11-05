@@ -12,6 +12,8 @@ The mobile view follows the supplied prototype's vertically stacked video cards,
 
 Rep counts advance from real elapsed time at the selected reps per second; this is a pace guide, not camera-based body-movement detection. A saved rep target determines exercise duration (`repetitions / repsPerSecond`); without a rep target, the saved work duration determines completion. Reps do not advance during rest or pause. Session pace can be adjusted without losing counted reps or changing the trainer's saved batch. The counter resets for each exercise and round.
 
+Work time and reps also wait for the video's actual playback state: loading/buffering never consumes reps. Native `playing`/`waiting` events and the YouTube IFrame player's playback events control readiness. Rest intervals continue while the video is paused. A video-save confirmation appears as soon as creation succeeds; a later library-refresh problem shows a refresh instruction without claiming the save failed.
+
 Staff/admins can use **Add video** to save a YouTube link or hosted HTTPS MP4 link, optionally with start/end times to create an exercise clip. Portrait footage embedded with black sidebars can be center-cropped. Saved video entries appear in the batch builder's exercise library. This saves playable links and clip settings; it does not re-encode or export new MP4 files. The supplied Expo folder has no batch-creation, video-generation, or export implementation.
 
 ## Imported source

@@ -16,7 +16,9 @@ export function FunctionalVideoForm({ onSaved }: { onSaved: () => Promise<void> 
       const response = await fetch("/api/workout/functional/videos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, videoUrl: url, videoStartSeconds: start, videoEndSeconds: end ? Number(end) : null, videoLayout: crop ? "CENTER_CROP" : "FIT" }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error?.message ?? "Unable to save video.");
-      await onSaved(); setName(""); setUrl(""); setMessage("Video saved to the exercise library. You can now add it to a batch.");
+      setName(""); setUrl(""); setMessage("Video saved to the exercise library. You can now add it to a batch."); setSaving(false);
+      try { await onSaved(); }
+      catch { setMessage("Video saved. Refresh Workouts to load the updated exercise library."); }
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save video."); }
     finally { setSaving(false); }
   }
